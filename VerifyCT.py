@@ -52,9 +52,9 @@ frequency variations within click trains
 
 
 def SaveUpdates():
-    global SelectedFolder
-    FullName = 'C:/Mel/TempWORK/CPODvsDPorCCA/NewFiles/VerifyCTs.csv'
-    CTInfo.to_csv(FullName)
+    global SelectedFolder, AllCTInfo
+    FullNameCTInfo = SelectedFolder + '/AllCTInfo.csv'
+    AllCTInfo.to_csv(FullNameCTInfo)
 
 
 class Ui_MainWindow(object):
@@ -462,7 +462,6 @@ class Ui_MainWindow(object):
         global CTTemp
         CTTemp = CP[CP.NewCT == num_ct]
         CTTemp.reset_index(inplace=True)
-        print(CTTemp)
         fs = 1 / (CTTemp.iloc[3]['ICI'] / (1000 * (CTTemp.iloc[3]["start_sample"] - CTTemp.iloc[2]["start_sample"])))
         CTTemp = self.NewICI(CTTemp, fs)
         CTTemp.loc[:, 'SumMs'] = int(0)
@@ -619,7 +618,6 @@ class Ui_MainWindow(object):
             CTInfoFileName = self.SelectedFolder + '/AllCTInfo.csv'
             CTInfo = pd.read_csv(CTInfoFileName)
             CTNum = CTInfo.NewCT[0]
-            CTInfo['Corr'] = 0
             self.update_ct(CTNum, CP, CTInfo)
         else:
             AllCTInfo = pd.DataFrame()
@@ -644,9 +642,7 @@ class Ui_MainWindow(object):
                         CTTemp = ThisCP[ThisCP.CT == NumCT]
                         CTTemp.reset_index(inplace=True, drop=True)
                         CTTemp['NewCT'] = NewCTNum
-                        print(CTTemp)
                         CTrains = CTrains.append(CTTemp, ignore_index=True)
-                        print(CTrains)
                     AllCTInfo.reset_index(inplace=True, drop=True)
                     AllCTrains.reset_index(inplace=True, drop=True)
                     AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
