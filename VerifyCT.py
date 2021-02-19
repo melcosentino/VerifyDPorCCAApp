@@ -579,7 +579,7 @@ class Ui_MainWindow(object):
         t = np.arange(0.0, Duration, 1 / fs)
         NFFT = 512  # length of the windowing segments
 
-        fig, (ax1, ax2) = plt.subplots(nrows=2)
+        fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
         ax1.plot(t, FiltSig)
         Pxx, freqs, bins, im = ax2.specgram(FiltSig, NFFT=NFFT, Fs=fs, noverlap=128, cmap='jet')
         plt.show()
