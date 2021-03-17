@@ -7,7 +7,7 @@ import tkinter as tk
 import pandas as pd
 import plotly
 import plotly.express as px
-# import plotly.graph_objs as go
+import plotly.graph_objs as go
 pd.options.plotting.backend = "plotly"
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,15 +16,14 @@ import pyqtgraph as pg
 import os
 import soundfile
 from scipy import signal
-from PyQt5 import QtCore, QtGui
-from PyQt5 import QtWidgets
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets, QtGui
 from datetime import datetime, timedelta
 from tkinter import filedialog
+
+pd.options.plotting.backend = "plotly"
 # Offline mode
 # from plotly.offline import init_notebook_mode, iplot
 # init_notebook_mode(connected=True)
-
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 pd.options.mode.chained_assignment = None
@@ -34,7 +33,7 @@ pd.options.mode.chained_assignment = None
 # import PyHydrophones # need to install first
 
 global BrowseSelectedFolder, CTInfo, CTTemp, NHyd, CP, SelectedFolder, topLevelFolderMetrics
-global thisFolder, sset, srise, VerifyCT
+global thisFolder, sset, srise, fs, VerifyCT
 
 """
 Creates pop up windows 
@@ -67,51 +66,54 @@ def SaveUpdates():
 
 class Ui_MainWindow(object):
     def __init__(self):
-        # some variables
-        self.band_n = -1
-        self.bands_list = {}
-        # self._processed = {}
-        self._reset_spectro()
-
         # Main Display
         self.MainDisplayTab = QtWidgets.QWidget()
         self.DisplaySettings = QtWidgets.QFrame(self.MainDisplayTab)
         self.AxesPan = QtWidgets.QFrame(self.MainDisplayTab)
+        self.ActionPan = QtWidgets.QFrame(self.MainDisplayTab)
+        left_widget = QtWidgets.QWidget(self.AxesPan)
+        left_widget.setGeometry(5, 5, 800, 700)
+
+        # Axes
+        self.AmpAxesCT = QtWebEngineWidgets.QWebEngineView()
+        self.ICIAxesCT = QtWebEngineWidgets.QWebEngineView()  # used to be QGraphicsView
+        self.FreqAxesCT = QtWebEngineWidgets.QWebEngineView()
+        self.layout = QtWidgets.QVBoxLayout(left_widget)
+        self.layout.addWidget(self.AmpAxesCT)
+        self.layout.addWidget(self.ICIAxesCT)
+        self.layout.addWidget(self.FreqAxesCT)
+
+        hlay = QtWidgets.QHBoxLayout(self.AxesPan)
+        hlay.addWidget(left_widget)
+
+        # Action
+        right_widget = QtWidgets.QWidget(self.ActionPan)
+        right_widget.setGeometry(5, 5, 800, 700)
+
+        self.WaveAxes = QtWebEngineWidgets.QWebEngineView()
+        self.SpectAxes = QtWebEngineWidgets.QWebEngineView()  # used to be QGraphicsView
+        self.layoutAct = QtWidgets.QVBoxLayout(right_widget)
+        self.layoutAct.addWidget(self.WaveAxes)
+        self.layoutAct.addWidget(self.SpectAxes)
+
+        hlay2 = QtWidgets.QHBoxLayout(self.ActionPan)
+        hlay2.addWidget(right_widget)
+
 
         # Validate pan
-        self.ActionPan = QtWidgets.QFrame(self.MainDisplayTab)
+
         self.ActionLabel = QtWidgets.QLabel(self.ActionPan)
-        self.WaveAxes = pg.PlotWidget(self.ActionPan)
-        self.SpectAxes = pg.ImageView(self.ActionPan)
-        # self.SpectAxes = plt.Axes(fig=self.ActionPan, rect=[10, 60, 340, 300]) #  pg.PlotWidget(self.ActionPan)
+        #  self.WaveAxes = pg.PlotWidget(self.ActionPan)
+        # self.SpectAxes = pg.ImageView(self.ActionPan)
 
         # Validate
-       # self.CT3DPan = QtWidgets.QFrame(self.ActionPan)
         self.WrongButton = QtWidgets.QPushButton(self.DisplaySettings)
         self.RightButton = QtWidgets.QPushButton(self.DisplaySettings)
         self.UploadValData = QtWidgets.QPushButton(self.DisplaySettings)
-       # self.CTin3D = QtWidgets.QPushButton(self.CT3DPan)
 
-        # Axes
-        self.AmpAxesCT = pg.PlotWidget(self.AxesPan)
-
-        self.ICIAxesCT = pg.PlotWidget(self.AxesPan)  # used to be QGraphicsView
-
-        self.FreqAxesCT = pg.PlotWidget(self.AxesPan)
-
-        self.AmpAxesCT.setBackground(background='w')
-        self.ICIAxesCT.setBackground(background='w')
-        self.FreqAxesCT.setBackground(background='w')
-        self.AmpAxesCT.showAxis('bottom', show=False)
-        self.ICIAxesCT.showAxis('bottom', show=False)
         self.AmplitudeDB = QtWidgets.QLabel(self.AxesPan)
-
-        self.FreqPan = QtWidgets.QFrame(self.AxesPan)
-        self.DirectionofarrivalButton = QtWidgets.QRadioButton(self.FreqPan)
-        self.CentroidfrequencykHzButton = QtWidgets.QRadioButton(self.FreqPan)
-        self.ICIPan = QtWidgets.QFrame(self.AxesPan)
-        self.ClickspersecondButton = QtWidgets.QRadioButton(self.ICIPan)
-        self.InterclickintervalmsButton = QtWidgets.QRadioButton(self.ICIPan)
+        self.CPSLbl = QtWidgets.QLabel(self.AxesPan)
+        self.FreqLbl = QtWidgets.QLabel(self.AxesPan)
 
         self.SaveupdatesButton = QtWidgets.QPushButton(self.DisplaySettings)
 
@@ -225,8 +227,6 @@ class Ui_MainWindow(object):
         self.TotalLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.TotalLabel.setObjectName("TotalLabel")
 
-
-
         # Save button
         self.SaveupdatesButton.setGeometry(QtCore.QRect(1265, 8, 95, 106))
         self.SaveupdatesButton.setLayoutDirection(QtCore.Qt.RightToLeft)
@@ -239,79 +239,37 @@ class Ui_MainWindow(object):
         ## AXES AREA
         ##################
         pg.setConfigOption('background', 'w')
-        self.AxesPan.setGeometry(QtCore.QRect(10, 150, 1000, 700))
+        self.AxesPan.setGeometry(QtCore.QRect(10, 150, 800, 700))
         self.AxesPan.setFrameShape(QtWidgets.QFrame.Box)
         self.AxesPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.AxesPan.setObjectName("AxesPan")
         # AMPLITUDE
-        self.AmplitudeDB.setGeometry(QtCore.QRect(450, 7, 300, 20))
+        self.AmplitudeDB.setGeometry(QtCore.QRect(300, 7, 250, 20))
         self.AmplitudeDB.setObjectName("AmplitudeDB")
-        # Axes to plot STEM
-        self.AmpAxesCT.setGeometry(QtCore.QRect(20, 35, 960, 192))
+        self.AmplitudeDB.setAlignment(QtCore.Qt.AlignCenter)
+        self.CPSLbl.setGeometry(QtCore.QRect(300, 230, 250, 20))
+        self.CPSLbl.setObjectName("CPSLbl")
+        self.CPSLbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.FreqLbl.setGeometry(QtCore.QRect(300, 450, 250, 20))
+        self.FreqLbl.setObjectName("FreqLbl")
+        self.FreqLbl.setAlignment(QtCore.Qt.AlignCenter)
+
         self.AmpAxesCT.setObjectName("AmpAxesCT")
-        # ICI / CPS
-        self.ICIAxesCT.setGeometry(QtCore.QRect(20, 239, 960, 214))
-        self.ICIAxesCT.setObjectName("ICIAxesCT")
-        self.ICIPan.setGeometry(QtCore.QRect(300, 214, 650, 42))
-        self.ICIPan.setFrameShape(QtWidgets.QFrame.Box)
-        self.ICIPan.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.ICIPan.setObjectName("ICIPan")
-        # CPS radio button
-        self.ClickspersecondButton.setGeometry(QtCore.QRect(50, 10, 200, 20))
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        self.ClickspersecondButton.setFont(font)
-        self.ClickspersecondButton.setObjectName("ClickspersecondButton")
-        self.ClickspersecondButton.setChecked(True)
-        # ICI radio button
-        self.InterclickintervalmsButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        self.InterclickintervalmsButton.setFont(font)
-        self.InterclickintervalmsButton.setObjectName("InterclickintervalmsButton")
-        # FREQUENCY / BEARING
-        self.FreqAxesCT.setGeometry(QtCore.QRect(20, 464, 960, 210))
-        self.FreqAxesCT.setObjectName("FreqAxesCT")
-        self.FreqPan.setGeometry(QtCore.QRect(300, 434, 650, 42))
-        self.FreqPan.setFrameShape(QtWidgets.QFrame.Box)
-        self.FreqPan.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.FreqPan.setObjectName("FreqPan")
-        # Frequency radio button
-        self.CentroidfrequencykHzButton.setGeometry(QtCore.QRect(50, 10, 200, 20))
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        self.CentroidfrequencykHzButton.setFont(font)
-        self.CentroidfrequencykHzButton.setObjectName("CentroidfrequencykHzButton")
-        self.CentroidfrequencykHzButton.setChecked(True)
-        # Bearing radio button
-        self.DirectionofarrivalButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        self.DirectionofarrivalButton.setFont(font)
-        self.DirectionofarrivalButton.setObjectName("DirectionofarrivalButton")
+
         ######################
         ## ACTION AREA
         ######################
-        self.ActionPan.setGeometry(QtCore.QRect(1020, 150, 360, 700))
+        self.ActionPan.setGeometry(QtCore.QRect(820, 150, 560, 700))
         self.ActionPan.setFrameShape(QtWidgets.QFrame.Box)
         self.ActionPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.ActionPan.setObjectName("ActionPan")
-        self.ActionLabel.setGeometry(QtCore.QRect(40, 20, 250, 30))
+        self.ActionLabel.setGeometry(QtCore.QRect(150, 7, 250, 20))
+        self.ActionLabel.setAlignment(QtCore.Qt.AlignCenter)
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         self.ActionLabel.setFont(font)
         self.ActionLabel.setObjectName("ActionLabel")
-        # Waveform & spectrogram
-        self.WaveAxes.setGeometry(10, 60, 340, 300)
-        self.WaveAxes.setObjectName("WaveAxes")
-        self.SpectAxes.setGeometry(QtCore.QRect(10, 400, 340, 300))
-        self.SpectAxes.setObjectName("SpectAxes")
-
 
         # Browse button
         self.SelectLabel = QtWidgets.QLabel(self.DisplaySettings)
@@ -329,12 +287,6 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
-
-        # Individual click trains
-        # self.CT3DPan.setGeometry(QtCore.QRect(20, 250, 320, 310))
-        # self.CT3DPan.setFrameShape(QtWidgets.QFrame.Box)
-        # self.CT3DPan.setFrameShadow(QtWidgets.QFrame.Raised)
-        # self.CT3DPan.setObjectName("CT3DPan")
 
         # Click train in 3D
         self.UploadValData.setFont(font)
@@ -357,15 +309,6 @@ class Ui_MainWindow(object):
         self.RightButton.setFont(font)
         self.RightButton.setObjectName("RightButton")
         self.RightButton.clicked.connect(self.PutRight)
-
-        # self.CTin3D.setGeometry(QtCore.QRect(10, 180, 200, 60))
-        # font = QtGui.QFont()
-        # font.setBold(False)
-        # font.setWeight(50)
-        # # Spectrogram area
-        # self.CTin3D.setFont(font)
-        # self.CTin3D.setObjectName("CTin3D")
-        # #        self.CTin3D.clicked.connect(self.SeeCTin3D)
 
         self.MainTab.addTab(self.MainDisplayTab, "")
 
@@ -414,10 +357,16 @@ class Ui_MainWindow(object):
         self.AmplitudeDB.setText(_translate("MainWindow",
                                             "<html><head/><body><p><span style=\" font-weight:600\">Amplitude ("
                                             "dB re: 1uPa)</span></p></body></html>"))
-        self.InterclickintervalmsButton.setText(_translate("MainWindow", "Inter-click interval"))
-        self.ClickspersecondButton.setText(_translate("MainWindow", "Clicks per second"))
-        self.CentroidfrequencykHzButton.setText(_translate("MainWindow", "Centroid Frequency"))
-        self.DirectionofarrivalButton.setText(_translate("MainWindow", "Direction of arrival"))
+        self.CPSLbl.setText(_translate("MainWindow",
+                                            "<html><head/><body><p><span style=\" font-weight:600\">Clicks per second"
+                                            "</span></p></body></html>"))
+        self.FreqLbl.setText(_translate("MainWindow",
+                                            "<html><head/><body><p><span style=\" font-weight:600\">Centroid frequency ("
+                                            "kHz)</span></p></body></html>"))
+        # self.InterclickintervalmsButton.setText(_translate("MainWindow", "Inter-click interval"))
+        # self.ClickspersecondButton.setText(_translate("MainWindow", "Clicks per second"))
+        # self.CentroidfrequencykHzButton.setText(_translate("MainWindow", "Centroid Frequency"))
+        # self.DirectionofarrivalButton.setText(_translate("MainWindow", "Direction of arrival"))
         self.MainTab.setTabText(self.MainTab.indexOf(self.MainDisplayTab), _translate("MainWindow", "Main Display"))
 
     """
@@ -428,9 +377,6 @@ class Ui_MainWindow(object):
         num_ct = int(self.CTNumD.text())
         first = CTInfo['NewCT'].iloc[0]
         if num_ct > first:
-            self.AmpAxesCT.clear()
-            self.ICIAxesCT.clear()
-            self.FreqAxesCT.clear()
             row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
             num_ct = CTInfo.NewCT[row_ct - 1]
             self.update_ct(num_ct, CP, CTInfo)
@@ -441,95 +387,48 @@ class Ui_MainWindow(object):
         if num_ct == tot:
             print(num_ct, tot)  # do nothing
         elif num_ct < tot:
-            self.AmpAxesCT.clear()
-            self.ICIAxesCT.clear()
-            self.FreqAxesCT.clear()
             row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
             num_ct = CTInfo.NewCT[row_ct + 1]
             self.update_ct(num_ct, CP, CTInfo)
 
     def update_ct(self, num_ct, CP, CTInfo):
-        # print(CTInfo)
         global CTTemp
         CTTemp = CP[CP.NewCT == num_ct]
         CTTemp.reset_index(inplace=True)
-        self.fs = 1 / (CTTemp.iloc[3]['ICI'] / (1000 * (CTTemp.iloc[3]["start_sample"] - CTTemp.iloc[2]["start_sample"])))
-        CTTemp = self.NewICI(CTTemp)
+        fs = 1 / (CTTemp.iloc[3]['ICI'] / (1000 * (CTTemp.iloc[3]["start_sample"] - CTTemp.iloc[2]["start_sample"])))
+        CTTemp = self.NewICI(CTTemp, fs)
         CTTemp.loc[:, 'SumMs'] = int(0)
         for i in range(1, len(CTTemp)):
             CTTemp.SumMs[i] = int(CTTemp.SumMs[i - 1]) + int(CTTemp.ICI[i])
         CTTemp.SumMs = CTTemp.SumMs / 1000
-        CT1HQ = CTTemp[CTTemp['pyPorCC'] == 1]
-        CT1LQ = CTTemp[CTTemp['pyPorCC'] == 2]
+        # Update info in app
         self.CTNumD.setText(str(num_ct))
         self.CTTypeLabel.setText(str(CTInfo.Species[CTInfo.NewCT == num_ct].values[0]))
         self.DateandtimeofCTLabel.setText(str(CTInfo.Date[CTInfo.NewCT == num_ct].values[0]))
         self.TotalLabel.setText('(' + str(CTInfo['NewCT'].iloc[-1]) + ')')
         self.CorrText.setText(str(CTInfo.Corr[CTInfo.NewCT == num_ct].values[0]))
 
-        self.AmpAxesCT.clear()
-        # TODO set the max and min in all axis (think of SoundTrap data)
-        WidthBar = max(CTTemp.SumMs) / 500
-        AmpLinesLQ = pg.BarGraphItem(x=CT1LQ.SumMs, height=CT1LQ.amplitude, brush='b', width=WidthBar)
-        AmpLinesHQ = pg.BarGraphItem(x=CT1HQ.SumMs, height=CT1HQ.amplitude, brush='r', width=WidthBar)
-        AmpDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=CT1LQ.amplitude, symbol='o', brush='b', width=0.2)
-        AmpDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=CT1HQ.amplitude, symbol='o', brush='r', width=0.2)
-        self.AmpAxesCT.addItem(AmpLinesLQ)
-        self.AmpAxesCT.addItem(AmpDotsLQ)
-        self.AmpAxesCT.addItem(AmpLinesHQ)
-        self.AmpAxesCT.addItem(AmpDotsHQ)
-        self.AmpAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-        self.AmpAxesCT.setYRange(80, 150)
+        Amps = px.bar(CTTemp, x="SumMs", y="amplitude", width=750, height=250)
+        Amps.update_yaxes(title='')
+        Amps.update_xaxes(title='')
+        CPSs = px.scatter(CTTemp, x="SumMs", y="CPS", width=750, height=250)
+        CPSs.update_yaxes(title='')
+        CPSs.update_xaxes(title='')
+        Freqs = px.bar(CTTemp, x="SumMs", y="CF", width=750, height=250)
+        Freqs.update_yaxes(title='')
+        Freqs.update_xaxes(title='')
+        self.AmpAxesCT.setHtml(Amps.to_html(include_plotlyjs='cdn'))
+        self.ICIAxesCT.setHtml(CPSs.to_html(include_plotlyjs='cdn'))
+        self.FreqAxesCT.setHtml(Freqs.to_html(include_plotlyjs='cdn'))
+        self.AmpAxesCT.sizeHint()
+        self.ICIAxesCT.sizeHint()
+        self.FreqAxesCT.sizeHint()
 
-        # plot click per second (default) or ICI
-        ICIorCPS = self.InterclickintervalmsButton.isChecked()
-
-        if ICIorCPS == 1:
-            ICILQ = CT1LQ.ICI.to_list()
-            ICIHQ = CT1HQ.ICI.to_list()
-            ICIDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=ICILQ, symbol='o', brush='b', width=2)
-            ICIDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=ICIHQ, symbol='o', brush='r', width=2)
-            self.ICIAxesCT.addItem(ICIDotsLQ)
-            self.ICIAxesCT.addItem(ICIDotsHQ)
-            self.ICIAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.ICIAxesCT.setYRange(0, max(CTTemp.ICI[2:-1]) + 10)
-        else:
-            # plot clicks per second
-            CPSLQ = CT1LQ.CPS.to_list()
-            CPSHQ = CT1HQ.CPS.to_list()
-            CPSDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=CPSLQ, symbol='o', brush='b', width=2)
-            CPSDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=CPSHQ, symbol='o', brush='r', width=2)
-            self.ICIAxesCT.addItem(CPSDotsLQ)
-            self.ICIAxesCT.addItem(CPSDotsHQ)
-            self.ICIAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.ICIAxesCT.setYRange(0, max(CTTemp.CPS[2:-1]) + 30)
-        a = 1
-        if a == 0:  # If bearing exist
-            # TODO identifying if bearing exists and plot
-            CTTemp.Bearing = CTTemp.Bearing.to_list()
-            self.FreqAxesCT.plot(CTTemp.SumMs, CTTemp.Bearing, pen=None, symbol='o', color='b')
-            self.FreqAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.FreqAxesCT.setYRange(0, 180)
-        else:
-            FreqLQ = CT1LQ.CF / 1000
-            FreqHQ = CT1HQ.CF / 1000
-            FreqLQ = FreqLQ.to_list()
-            FreqHQ = FreqHQ.to_list()
-            FreqLinesLQ = pg.BarGraphItem(x=CT1LQ.SumMs, height=FreqLQ, brush='b', width=WidthBar)
-            FreqLinesHQ = pg.BarGraphItem(x=CT1HQ.SumMs, height=FreqHQ, brush='r', width=WidthBar)
-            FreqDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=FreqLQ, symbol='o', brush='b', width=2)
-            FreqDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=FreqHQ, symbol='o', brush='r', width=2)
-            self.FreqAxesCT.addItem(FreqLinesLQ)
-            self.FreqAxesCT.addItem(FreqDotsLQ)
-            self.FreqAxesCT.addItem(FreqLinesHQ)
-            self.FreqAxesCT.addItem(FreqDotsHQ)
-            self.FreqAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.FreqAxesCT.setYRange(50, 180)
         self.CreateSpectrogram()
 
-    def NewICI(self, myTable):
+    def NewICI(self, myTable, fs):
         StartSample = myTable["start_sample"]
-        myTable.ICI = StartSample.diff() / (self.fs / 1000)
+        myTable.ICI = StartSample.diff() / (fs / 1000)
         myTable["CPS"] = 1000 / myTable["ICI"]
         myTable.iloc[0]['CPS'] = 0
         myTable.iloc[0]['ICI'] = 0
@@ -552,7 +451,7 @@ class Ui_MainWindow(object):
     """
 
     def CreateSpectrogram(self):
-        global CTTemp, Name
+        global fs, CTTemp, Name
         # Find the file to open
         WavFileToOpen = CTTemp.filename[0]
         s = soundfile.SoundFile(WavFileToOpen)
@@ -564,37 +463,47 @@ class Ui_MainWindow(object):
         if Start < 0:
             Start = 0
 
-        Signal, self.fs = soundfile.read(WavFileToOpen, start=int(Start), stop=int(End))
+        Signal, fs = soundfile.read(WavFileToOpen, start=int(Start), stop=int(End))
         MeanSig = sum(Signal) / len(Signal)
         Signal = Signal - MeanSig
         # Signal = Signal/max(Signal)
-        sos = signal.butter(10, 50000, 'hp', fs=self.fs, output='sos')
-        self.filtered_signal = signal.sosfilt(sos, Signal)
+        sos = signal.butter(10, 50000, 'hp', fs=fs, output='sos')
+        FiltSig = signal.sosfilt(sos, Signal)
         # the signal
-        Duration = len(Signal) / self.fs
-        t = np.arange(0.0, Duration, 1 / self.fs)
-        self.WaveAxes.plot(t, self.filtered_signal)
+        Duration = len(Signal) / fs
+        t = np.arange(0.0, Duration, 1 / fs)
+        data = pd.DataFrame()
+        data['t'] = t[0:5000]
+        data['FiltSig'] = FiltSig[0:5000]
         NFFT = 512  # length of the windowing segments
         window = signal.get_window('hann', NFFT)
         Overlap = 128
-        # _, _, Pxx = signal.spectrogram(self.filtered_signal, fs=self.fs, nfft=NFFT, window=window, scaling='density',
+
+        Waveform = px.bar(data, x='t', y='FiltSig', width=500, height=300)
+        # Spect = px.bar(CTTemp, x="SumMs", y="CF", color="pyPorCC", width=950, height=200)
+        self.WaveAxes.setHtml(Waveform.to_html(include_plotlyjs='cdn'))
+#        self.SpectAxes.setHtml(Spect.to_html(include_plotlyjs='cdn'))
+        self.WaveAxes.sizeHint()
+        self.SpectAxes.sizeHint()
+
+
+        # freq, t, Pxx = signal.spectrogram(FiltSig, fs=fs, nfft=NFFT, window=window, scaling='density',
         #                                   noverlap=Overlap)
-        self.sxx = self.spectrogram(nfft=NFFT, scaling='density', mode='Fast', db=True, force_calc=True)
         # Pxx = 10*np.log10(Pxx**2)
-        self.SpectAxes.setImage(self.sxx.T, autoRange=False, scale=(100, 600))
+        # self.SpectAxes.setImage(Pxx.T, autoRange=False, scale=(100, 600))
         #
         #
         # self.ActionPan, (self.WaveAxes, self.SpectAxes) = plt.subplots(nrows=2, sharex=True)
         #
-        # # Pxx, freqs, bins, im = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
+        # # Pxx, freqs, bins, im = plt.specgram(FiltSig, NFFT=NFFT, Fs=fs, noverlap=128, cmap='jet')
         #
-        # self.SpectAxes = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
+        # self.SpectAxes = plt.specgram(FiltSig, NFFT=NFFT, Fs=fs, noverlap=128, cmap='jet')
         # #plt.show()
 
 
         # fig, (ax1, ax2) = plt.subplots(nrows=2)
-        # ax1.plot(t, self.filtered_signal)
-        # Pxx, freqs, bins, im = ax2.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, window=window, noverlap=Overlap)
+        # ax1.plot(t, FiltSig)
+        # Pxx, freqs, bins, im = ax2.specgram(FiltSig, NFFT=NFFT, Fs=fs, window=window, noverlap=Overlap)
         # The `specgram` method returns 4 objects. They are:
         # - Pxx: the periodogram
         # - freqs: the frequency vector
@@ -676,114 +585,6 @@ class Ui_MainWindow(object):
             num_ct = 1
             self.update_ct(num_ct, CP, CTInfo)
             print('The data is ready to be validated')
-
-    def spectrogram(self, nfft=512, scaling='density', db=True, mode='fast', force_calc=False):
-        """
-        Return the spectrogram of the signal (entire file)
-        Parameters
-        ----------
-        db : bool
-            If set to True the result will be given in db, otherwise in uPa^2
-        nfft : int
-            Length of the fft window in samples. Power of 2.
-        scaling : string
-            Can be set to 'spectrum' or 'density' depending on the desired output
-        mode : string
-            If set to 'fast', the signal will be zero padded up to the closest power of 2
-        force_calc : bool
-            Set to True if the computation has to be forced
-        Returns
-        -------
-        freq, t, sxx
-        """
-        if force_calc:
-            self._spectrogram(nfft=nfft, scaling=scaling, mode=mode)
-        if db:
-            sxx = self.to_db(self.sxx, ref=1.0, square=False)
-        return sxx
-
-    def to_db(self, wave, ref=1.0, square=False):
-        """
-        Compute the db from the upa signal
-        Parameters
-        ----------
-        wave : numpy array
-            Signal in upa
-        ref : float
-            Reference pressure
-        square : boolean
-            Set to True if the signal has to be squared
-        """
-        if square:
-            db = 10 * np.log10(wave ** 2 / ref ** 2)
-        else:
-            db = 10 * np.log10(wave / ref ** 2)
-        return db
-
-    def _spectrogram(self, nfft=512, scaling='density', mode='fast'):
-        """
-        Computes the spectrogram of the signal and saves it in the attributes
-        Parameters
-        ----------
-        nfft : int
-            Length of the fft window in samples. Power of 2.
-        scaling : string
-            Can be set to 'spectrum' or 'density' depending on the desired output
-        mode : string
-            If set to 'fast', the signal will be zero padded up to the closest power of 2
-        Returns
-        -------
-        None
-        """
-        real_size = self.filtered_signal.size
-        if self.filtered_signal.size < nfft:
-            s = self._fill_or_crop(n_samples=nfft)
-        else:
-            if mode == 'fast':
-                # Choose the closest power of 2 to clocksize for faster computing
-                optim_len = int(2 ** np.ceil(np.log2(real_size)))
-                # Fill the missing values with 0
-                s = self._fill_or_crop(n_samples=optim_len)
-            else:
-                s = self.filtered_signal
-        window = signal.get_window('hann', nfft)
-        freq, t, sxx = signal.spectrogram(s, fs=self.fs, nfft=nfft,
-                                       window=window, scaling=scaling)
-#        if self.band is not None:
-#            low_freq = np.argmax(freq >= self.band[0])
-#        else:
-        low_freq = 0
-        self.freq = freq[low_freq:]
-        n_bins = int(np.floor(real_size / (nfft * 7 / 8)))
-        self.sxx = sxx[low_freq:, 0:n_bins]
-        self.t = t[0:n_bins]
-
-    def _fill_or_crop(self, n_samples):
-        """
-        Crop the signal to the number specified or fill it with 0 values in case it is too short
-        Parameters
-        ----------
-        n_samples : int
-            Number of desired samples
-        """
-        if self.filtered_signal.size >= n_samples:
-            s = self.filtered_signal[0:n_samples]
-            # self._processed[self.band_n].append('crop')
-        else:
-            nan_array = np.full((n_samples,), 0)
-            nan_array[0:self.filtered_signal.size] = self.filtered_signal
-            s = nan_array
-            # self._processed[self.band_n].append('fill')
-        return s
-
-    def _reset_spectro(self):
-        """
-        Reset the spectrogram parameters
-        """
-        self.sxx = None
-        self.psd = None
-        self.freq = None
-        self.t = None
 
 if __name__ == "__main__":
     import sys
