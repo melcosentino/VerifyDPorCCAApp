@@ -433,6 +433,7 @@ class Ui_MainWindow(object):
 
     def update_ct(self, num_ct, CP, CTInfo):
         """
+        This function updates the plots in the main display
         :param num_ct: int
                 click train number
         :param CP: pandas dataframe
@@ -440,7 +441,6 @@ class Ui_MainWindow(object):
         :param CTInfo: pandas dataframe
                 Contains summary information of all click trains identified in the data
         ---
-        This function updates the plots in the main display
 
         CTTemp: pandas database
                 click train that is being displayed. It is selected based on the new click train number, given in
@@ -525,11 +525,12 @@ class Ui_MainWindow(object):
 
     def NewICI(self, myTable):
         """
-        :param myTable: pandas dataframe
-                    Either CP or CTTemp
-        :return: myTable updated
-        ---
-        This functions calculates inter-click intervals and repetition rates after rows have been removed
+        Calculates inter-click intervals and repetition rates after rows have been removed
+        :param
+        myTable: pandas dataframe
+                Either CP or CTTemp
+        :return:
+        myTable updated
         """
         StartSample = myTable["start_sample"]
         myTable.ICI = StartSample.diff() / (self.fs / 1000)
@@ -540,8 +541,8 @@ class Ui_MainWindow(object):
 
     def put_wrong(self):
         """
-        Puts a 0 value in the column "Corr" in CTInfo, to indicate the classification of the click train as one
-        produced by a harbour porpoise was incorrect
+        Inserts '0' in the appropriate row in column "Corr" in CTInfo, to indicate the classification of the click train
+        as one produced by a harbour porpoise was incorrect. The default value is 1.
         """
         self.CorrText.setText('0')
         num_ct = int(self.CTNumD.text())
@@ -550,9 +551,8 @@ class Ui_MainWindow(object):
 
     def put_right(self):
         """
-        The default value of the column "Corr" in CTInfo is 1. This function allows the user to put a 1, to indicate
-        the classification of the click train as one produced by a harbour porpoise was correct, if they mistakenly
-        click the put_wrong button
+        Inserts '1' in the appropriate row in column "Corr" in CTInfo. The default value is 1, so this function
+        allows the correct themselves if they mistakenly click the put_wrong button.
         """
         self.CorrText.setText('1')
         num_ct = int(self.CTNumD.text())
@@ -561,7 +561,7 @@ class Ui_MainWindow(object):
 
     def CreateSpectrogram(self):
         """
-        This function opens the wav file where the click train being displayed was detected, and plots the waveform
+        Opens the wav file where the click train being displayed was detected, and plots the waveform
         and the spectrogram
         """
         global CTTemp, Name
@@ -594,14 +594,10 @@ class Ui_MainWindow(object):
         # Pxx = 10*np.log10(Pxx**2)
         self.SpectAxes.setImage(self.sxx.T, autoRange=False, scale=(100, 600))
         #
-        #
         # self.ActionPan, (self.WaveAxes, self.SpectAxes) = plt.subplots(nrows=2, sharex=True)
-        #
-        # # Pxx, freqs, bins, im = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
-        #
+        # Pxx, freqs, bins, im = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
         # self.SpectAxes = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
         # #plt.show()
-
 
         # fig, (ax1, ax2) = plt.subplots(nrows=2)
         # ax1.plot(t, self.filtered_signal)
@@ -633,7 +629,9 @@ class Ui_MainWindow(object):
 
     def click_browse_button(self):
         """
-        Opens a window to select the folder where the data is 
+        Opens a window to select the folder where the data is
+        SelectedFolder: str
+                Path to folder selected by the user
         """
         root = tk.Tk()
         root.withdraw()
@@ -642,10 +640,12 @@ class Ui_MainWindow(object):
 
     def upload_data(self):
         """
-        This functions either uploads the data for valition, or generates it if it has not be done yet
-        The data consists of all click trains identified as either high- or low-quality click trains produced
-        by harbour porpoises (AllCTInfo) and parameters of all clicks belonging to those click trains (AllCTrains)
-        When the data is uploaded, it is displayed
+        Uploads or prepares the data for validation. Displays the first click train.
+        AllCTInfo: pandas dataframe
+                Summary data of ll click trains identified as either high- or low-quality click trains produced
+                by harbour porpoises
+        AllCTrains: pandas dataframe
+                Parameters of all clicks belonging to the click trains in AllCTInfo
         """
         global CTInfo, CP
         FilesInFolder = os.listdir(self.SelectedFolder)
@@ -666,10 +666,10 @@ class Ui_MainWindow(object):
             if len(Folders) == 0:
                 AllCTrains = pd.read_csv(self.SelectedFolder + '/CTrains.csv')
                 AllCTInfo = pd.read_csv(self.SelectedFolder + '/CTInfo.csv')
-                CTInfo = ThisCTInfo[ThisCTInfo.Species != 'Non-NBHF']
-                CTInfo.reset_index(inplace=True, drop=True)
-                CTInfo['NewCT'] = CTInfo.CTNum
-                CTInfo['Corr'] = 1
+                AllCTInfo = AllCTInfo[AllCTInfo.Species != 'Non-NBHF']
+                AllCTInfo.reset_index(inplace=True, drop=True)
+                AllCTInfo['NewCT'] = AllCTInfo.CTNum
+                AllCTInfo['Corr'] = 1
             else:
                 for SubFolder in Folders:
                     print('Processing subfolder', SubFolder)
