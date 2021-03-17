@@ -87,9 +87,9 @@ class Ui_MainWindow(object):
 
         # Validate
        # self.CT3DPan = QtWidgets.QFrame(self.ActionPan)
-        self.WrongButton = QtWidgets.QPushButton(self.DisplaySettings)
-        self.RightButton = QtWidgets.QPushButton(self.DisplaySettings)
-        self.UploadValData = QtWidgets.QPushButton(self.DisplaySettings)
+        self.wrong_button = QtWidgets.QPushButton(self.DisplaySettings)
+        self.right_button = QtWidgets.QPushButton(self.DisplaySettings)
+        self.upload_val_data = QtWidgets.QPushButton(self.DisplaySettings)
        # self.CTin3D = QtWidgets.QPushButton(self.CT3DPan)
 
         # Axes
@@ -312,7 +312,6 @@ class Ui_MainWindow(object):
         self.SpectAxes.setGeometry(QtCore.QRect(10, 400, 340, 300))
         self.SpectAxes.setObjectName("SpectAxes")
 
-
         # Browse button
         self.SelectLabel = QtWidgets.QLabel(self.DisplaySettings)
         self.SelectLabel.setGeometry(820, 8, 150, 20)
@@ -321,51 +320,36 @@ class Ui_MainWindow(object):
         self.FolderPathDet.setGeometry(820, 40, 320, 30)
         self.FolderPathDet.setText("C:/")
         # Browse button
-        self.BrowseDet = QtWidgets.QPushButton(self.DisplaySettings)
-        self.BrowseDet.setGeometry(1040, 82, 100, 30)
-        self.BrowseDet.setText("Browse")
-        self.BrowseDet.clicked.connect(self.BrowseButtonDet)
-        self.UploadValData.setGeometry(QtCore.QRect(1155, 8, 100, 106))
+        self.browse_button = QtWidgets.QPushButton(self.DisplaySettings)
+        self.browse_button.setGeometry(1040, 82, 100, 30)
+        self.browse_button.setText("Browse")
+        self.browse_button.clicked.connect(self.click_browse_button)
+        self.upload_val_data.setGeometry(QtCore.QRect(1155, 8, 100, 106))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
-
-        # Individual click trains
-        # self.CT3DPan.setGeometry(QtCore.QRect(20, 250, 320, 310))
-        # self.CT3DPan.setFrameShape(QtWidgets.QFrame.Box)
-        # self.CT3DPan.setFrameShadow(QtWidgets.QFrame.Raised)
-        # self.CT3DPan.setObjectName("CT3DPan")
 
         # Click train in 3D
-        self.UploadValData.setFont(font)
-        self.UploadValData.setObjectName("UploadValData")
-        self.UploadValData.clicked.connect(self.upload_data)
-        self.WrongButton.setGeometry(QtCore.QRect(760, 8, 40, 48))
+        self.upload_val_data.setFont(font)
+        self.upload_val_data.setObjectName("upload_val_data")
+        self.upload_val_data.clicked.connect(self.upload_data)
+        self.wrong_button.setGeometry(QtCore.QRect(760, 8, 40, 48))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
         # Spectrogram area
-        self.WrongButton.setFont(font)
-        self.WrongButton.setObjectName("WrongButton")
-        self.WrongButton.clicked.connect(self.PutWrong)
+        self.wrong_button.setFont(font)
+        self.wrong_button.setObjectName("wrong_button")
+        self.wrong_button.clicked.connect(self.put_wrong)
 
-        self.RightButton.setGeometry(QtCore.QRect(760, 65, 40, 48))
+        self.right_button.setGeometry(QtCore.QRect(760, 65, 40, 48))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
         # Spectrogram area
-        self.RightButton.setFont(font)
-        self.RightButton.setObjectName("RightButton")
-        self.RightButton.clicked.connect(self.PutRight)
-
-        # self.CTin3D.setGeometry(QtCore.QRect(10, 180, 200, 60))
-        # font = QtGui.QFont()
-        # font.setBold(False)
-        # font.setWeight(50)
-        # # Spectrogram area
-        # self.CTin3D.setFont(font)
-        # self.CTin3D.setObjectName("CTin3D")
-        # #        self.CTin3D.clicked.connect(self.SeeCTin3D)
+        self.right_button.setFont(font)
+        self.right_button.setObjectName("right_button")
+        self.right_button.clicked.connect(self.put_right)
 
         self.MainTab.addTab(self.MainDisplayTab, "")
 
@@ -378,10 +362,6 @@ class Ui_MainWindow(object):
         self.MainTab.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    ##############################################################
-    ###############          FUNCTIONS          ###################
-
-    ###### Translate ##########
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Validation app"))
@@ -406,10 +386,10 @@ class Ui_MainWindow(object):
                                           "<html><head/><body><p><span style=\" "
                                           "font-weight:600\">Date</span></p></body></html>"))
         self.ActionLabel.setText(_translate("MainWindow", "Waveform and spectrogram"))
-        self.UploadValData.setText(_translate("MainWindow", "Upload \n"
+        self.upload_val_data.setText(_translate("MainWindow", "Upload \n"
                                                                 "data"))
-        self.WrongButton.setText(_translate("MainWindow", "X"))
-        self.RightButton.setText(_translate("MainWindow", "OK"))
+        self.wrong_button.setText(_translate("MainWindow", "X"))
+        self.right_button.setText(_translate("MainWindow", "OK"))
 #        self.CTin3D.setText(_translate("MainWindow", "See CT in 3D"))
         self.AmplitudeDB.setText(_translate("MainWindow",
                                             "<html><head/><body><p><span style=\" font-weight:600\">Amplitude ("
@@ -420,11 +400,11 @@ class Ui_MainWindow(object):
         self.DirectionofarrivalButton.setText(_translate("MainWindow", "Direction of arrival"))
         self.MainTab.setTabText(self.MainTab.indexOf(self.MainDisplayTab), _translate("MainWindow", "Main Display"))
 
-    """
-    Display buttons
-    """
 
     def ct_back(self):
+        """
+        Displays the previous click train
+        """
         num_ct = int(self.CTNumD.text())
         first = CTInfo['NewCT'].iloc[0]
         if num_ct > first:
@@ -436,6 +416,9 @@ class Ui_MainWindow(object):
             self.update_ct(num_ct, CP, CTInfo)
 
     def ct_forward(self):
+        """
+        Displays the next click train
+        """
         num_ct = int(self.CTNumD.text())
         tot = CTInfo['NewCT'].iloc[-1]
         if num_ct == tot:
@@ -449,7 +432,27 @@ class Ui_MainWindow(object):
             self.update_ct(num_ct, CP, CTInfo)
 
     def update_ct(self, num_ct, CP, CTInfo):
-        # print(CTInfo)
+        """
+        :param num_ct: int
+                click train number
+        :param CP: pandas dataframe
+                Contains parameters of all clicks classified as high- or low-quality harbour porpoise clicks
+        :param CTInfo: pandas dataframe
+                Contains summary information of all click trains identified in the data
+        ---
+        This function updates the plots in the main display
+
+        CTTemp: pandas database
+                click train that is being displayed. It is selected based on the new click train number, given in
+                chronological order when all click trains are put together for validation purposes
+        AmpAxesCT: pyqtgraph PlotWidget
+                Displays amplitude (dB re: 1uPa) variations within the click train as vertical lines
+        ICIAxesCT: pyqtgraph PlotWidget
+                Displays repetition rate (Clicks per second) variation within the click train as scatter plot
+        FreqAxesCT: pyqtgraph PlotWidget
+                Displays variations of the centroid frequency (kHz) within the click train as vertical lines
+        """
+
         global CTTemp
         CTTemp = CP[CP.NewCT == num_ct]
         CTTemp.reset_index(inplace=True)
@@ -503,31 +506,31 @@ class Ui_MainWindow(object):
             self.ICIAxesCT.addItem(CPSDotsHQ)
             self.ICIAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
             self.ICIAxesCT.setYRange(0, max(CTTemp.CPS[2:-1]) + 30)
-        a = 1
-        if a == 0:  # If bearing exist
-            # TODO identifying if bearing exists and plot
-            CTTemp.Bearing = CTTemp.Bearing.to_list()
-            self.FreqAxesCT.plot(CTTemp.SumMs, CTTemp.Bearing, pen=None, symbol='o', color='b')
-            self.FreqAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.FreqAxesCT.setYRange(0, 180)
-        else:
-            FreqLQ = CT1LQ.CF / 1000
-            FreqHQ = CT1HQ.CF / 1000
-            FreqLQ = FreqLQ.to_list()
-            FreqHQ = FreqHQ.to_list()
-            FreqLinesLQ = pg.BarGraphItem(x=CT1LQ.SumMs, height=FreqLQ, brush='b', width=WidthBar)
-            FreqLinesHQ = pg.BarGraphItem(x=CT1HQ.SumMs, height=FreqHQ, brush='r', width=WidthBar)
-            FreqDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=FreqLQ, symbol='o', brush='b', width=2)
-            FreqDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=FreqHQ, symbol='o', brush='r', width=2)
-            self.FreqAxesCT.addItem(FreqLinesLQ)
-            self.FreqAxesCT.addItem(FreqDotsLQ)
-            self.FreqAxesCT.addItem(FreqLinesHQ)
-            self.FreqAxesCT.addItem(FreqDotsHQ)
-            self.FreqAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.FreqAxesCT.setYRange(50, 180)
+
+        FreqLQ = CT1LQ.CF / 1000
+        FreqHQ = CT1HQ.CF / 1000
+        FreqLQ = FreqLQ.to_list()
+        FreqHQ = FreqHQ.to_list()
+        FreqLinesLQ = pg.BarGraphItem(x=CT1LQ.SumMs, height=FreqLQ, brush='b', width=WidthBar)
+        FreqLinesHQ = pg.BarGraphItem(x=CT1HQ.SumMs, height=FreqHQ, brush='r', width=WidthBar)
+        FreqDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=FreqLQ, symbol='o', brush='b', width=2)
+        FreqDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=FreqHQ, symbol='o', brush='r', width=2)
+        self.FreqAxesCT.addItem(FreqLinesLQ)
+        self.FreqAxesCT.addItem(FreqDotsLQ)
+        self.FreqAxesCT.addItem(FreqLinesHQ)
+        self.FreqAxesCT.addItem(FreqDotsHQ)
+        self.FreqAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
+        self.FreqAxesCT.setYRange(50, 180)
         self.CreateSpectrogram()
 
     def NewICI(self, myTable):
+        """
+        :param myTable: pandas dataframe
+                    Either CP or CTTemp
+        :return: myTable updated
+        ---
+        This functions calculates inter-click intervals and repetition rates after rows have been removed
+        """
         StartSample = myTable["start_sample"]
         myTable.ICI = StartSample.diff() / (self.fs / 1000)
         myTable["CPS"] = 1000 / myTable["ICI"]
@@ -535,23 +538,32 @@ class Ui_MainWindow(object):
         myTable.iloc[0]['ICI'] = 0
         return myTable
 
-    def PutWrong(self):
+    def put_wrong(self):
+        """
+        Puts a 0 value in the column "Corr" in CTInfo, to indicate the classification of the click train as one
+        produced by a harbour porpoise was incorrect
+        """
         self.CorrText.setText('0')
         num_ct = int(self.CTNumD.text())
         row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
         CTInfo.Corr[row_ct] = 0
 
-    def PutRight(self):
-        self.CorrText.setText('0')
+    def put_right(self):
+        """
+        The default value of the column "Corr" in CTInfo is 1. This function allows the user to put a 1, to indicate
+        the classification of the click train as one produced by a harbour porpoise was correct, if they mistakenly
+        click the put_wrong button
+        """
+        self.CorrText.setText('1')
         num_ct = int(self.CTNumD.text())
         row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
         CTInfo.Corr[row_ct] = 1
 
-    """
-    Buttons 
-    """
-
     def CreateSpectrogram(self):
+        """
+        This function opens the wav file where the click train being displayed was detected, and plots the waveform
+        and the spectrogram
+        """
         global CTTemp, Name
         # Find the file to open
         WavFileToOpen = CTTemp.filename[0]
@@ -563,7 +575,6 @@ class Ui_MainWindow(object):
             End = TotSamples
         if Start < 0:
             Start = 0
-
         Signal, self.fs = soundfile.read(WavFileToOpen, start=int(Start), stop=int(End))
         MeanSig = sum(Signal) / len(Signal)
         Signal = Signal - MeanSig
@@ -620,13 +631,22 @@ class Ui_MainWindow(object):
 
         return dt
 
-    def BrowseButtonDet(self):
+    def click_browse_button(self):
+        """
+        Opens a window to select the folder where the data is 
+        """
         root = tk.Tk()
         root.withdraw()
         self.SelectedFolder = filedialog.askdirectory()
         self.FolderPathDet.setText(self.SelectedFolder)
 
     def upload_data(self):
+        """
+        This functions either uploads the data for valition, or generates it if it has not be done yet
+        The data consists of all click trains identified as either high- or low-quality click trains produced
+        by harbour porpoises (AllCTInfo) and parameters of all clicks belonging to those click trains (AllCTrains)
+        When the data is uploaded, it is displayed
+        """
         global CTInfo, CP
         FilesInFolder = os.listdir(self.SelectedFolder)
         AllFile = [s for s in FilesInFolder if "AllCTrains.csv" in s]
