@@ -643,33 +643,41 @@ class Ui_MainWindow(object):
             NewCTNum = 0
             FilesAndFolders = os.listdir(self.SelectedFolder)
             Folders = [s for s in FilesAndFolders if not "." in s]
-            for SubFolder in Folders:
-                print('Processing subfolder', SubFolder)
-                ThisCP = pd.read_csv(self.SelectedFolder + '/' + SubFolder + '/CTrains.csv')
-                ThisCTInfo = pd.read_csv(self.SelectedFolder + '/' + SubFolder + '/CTInfo.csv')
+            if len(Folders) == 0:
+                AllCTrains = pd.read_csv(self.SelectedFolder + '/CTrains.csv')
+                AllCTInfo = pd.read_csv(self.SelectedFolder + '/CTInfo.csv')
                 CTInfo = ThisCTInfo[ThisCTInfo.Species != 'Non-NBHF']
                 CTInfo.reset_index(inplace=True, drop=True)
-                CTInfo['NewCT'] = 0
-                if len(CTInfo) > 0:
-                    CTrains = pd.DataFrame()
-                    for i in range(0, len(CTInfo)):
-                        NewCTNum = NewCTNum + 1
-                        NumCT = CTInfo.CTNum[i]
-                        CTInfo.NewCT[i] = NewCTNum
-                        CTInfo['Corr'] = 1
-                        CTTemp = ThisCP[ThisCP.CT == NumCT]
-                        CTTemp.reset_index(inplace=True, drop=True)
-                        CTTemp['NewCT'] = NewCTNum
-                        CTrains = CTrains.append(CTTemp, ignore_index=True)
-                    AllCTInfo.reset_index(inplace=True, drop=True)
-                    AllCTrains.reset_index(inplace=True, drop=True)
-                    AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
-                    AllCTrains = AllCTrains.append(CTrains, ignore_index=True)
+                CTInfo['NewCT'] = CTInfo.CTNum
+                CTInfo['Corr'] = 1
+            else:
+                for SubFolder in Folders:
+                    print('Processing subfolder', SubFolder)
+                    ThisCP = pd.read_csv(self.SelectedFolder + '/' + SubFolder + '/CTrains.csv')
+                    ThisCTInfo = pd.read_csv(self.SelectedFolder + '/' + SubFolder + '/CTInfo.csv')
+                    CTInfo = ThisCTInfo[ThisCTInfo.Species != 'Non-NBHF']
+                    CTInfo.reset_index(inplace=True, drop=True)
+                    CTInfo['NewCT'] = 0
+                    if len(CTInfo) > 0:
+                        CTrains = pd.DataFrame()
+                        for i in range(0, len(CTInfo)):
+                            NewCTNum = NewCTNum + 1
+                            NumCT = CTInfo.CTNum[i]
+                            CTInfo.NewCT[i] = NewCTNum
+                            CTInfo['Corr'] = 1
+                            CTTemp = ThisCP[ThisCP.CT == NumCT]
+                            CTTemp.reset_index(inplace=True, drop=True)
+                            CTTemp['NewCT'] = NewCTNum
+                            CTrains = CTrains.append(CTTemp, ignore_index=True)
+                        AllCTInfo.reset_index(inplace=True, drop=True)
+                        AllCTrains.reset_index(inplace=True, drop=True)
+                        AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
+                        AllCTrains = AllCTrains.append(CTrains, ignore_index=True)
 
-                    CTFileName = self.SelectedFolder + '/AllCTrains.csv'
-                    AllCTrains.to_csv(CTFileName, index=False)
-                    CTInfoFileName = self.SelectedFolder + '/AllCTInfo.csv'
-                    AllCTInfo.to_csv(CTInfoFileName, index=False)
+            CTFileName = self.SelectedFolder + '/AllCTrains.csv'
+            AllCTrains.to_csv(CTFileName, index=False)
+            CTInfoFileName = self.SelectedFolder + '/AllCTInfo.csv'
+            AllCTInfo.to_csv(CTInfoFileName, index=False)
 
             CTInfo = AllCTInfo
             CP = AllCTrains
