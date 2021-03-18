@@ -107,11 +107,11 @@ class Ui_MainWindow(object):
         self.AmplitudeDB = QtWidgets.QLabel(self.AxesPan)
 
         self.FreqPan = QtWidgets.QFrame(self.AxesPan)
-        self.DirectionofarrivalButton = QtWidgets.QRadioButton(self.FreqPan)
+        # self.DirectionofarrivalButton = QtWidgets.QRadioButton(self.FreqPan)
         self.CentroidfrequencykHzButton = QtWidgets.QRadioButton(self.FreqPan)
         self.ICIPan = QtWidgets.QFrame(self.AxesPan)
         self.ClickspersecondButton = QtWidgets.QRadioButton(self.ICIPan)
-        self.InterclickintervalmsButton = QtWidgets.QRadioButton(self.ICIPan)
+        # self.InterclickintervalmsButton = QtWidgets.QRadioButton(self.ICIPan)
 
         self.SaveupdatesButton = QtWidgets.QPushButton(self.DisplaySettings)
 
@@ -239,20 +239,20 @@ class Ui_MainWindow(object):
         ## AXES AREA
         ##################
         pg.setConfigOption('background', 'w')
-        self.AxesPan.setGeometry(QtCore.QRect(10, 150, 1000, 700))
+        self.AxesPan.setGeometry(QtCore.QRect(10, 150, 740, 700))
         self.AxesPan.setFrameShape(QtWidgets.QFrame.Box)
         self.AxesPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.AxesPan.setObjectName("AxesPan")
         # AMPLITUDE
-        self.AmplitudeDB.setGeometry(QtCore.QRect(450, 7, 300, 20))
+        self.AmplitudeDB.setGeometry(QtCore.QRect(250, 7, 300, 20))
         self.AmplitudeDB.setObjectName("AmplitudeDB")
         # Axes to plot STEM
-        self.AmpAxesCT.setGeometry(QtCore.QRect(20, 35, 960, 192))
+        self.AmpAxesCT.setGeometry(QtCore.QRect(20, 35, 700, 192))
         self.AmpAxesCT.setObjectName("AmpAxesCT")
         # ICI / CPS
-        self.ICIAxesCT.setGeometry(QtCore.QRect(20, 239, 960, 214))
+        self.ICIAxesCT.setGeometry(QtCore.QRect(20, 239, 700, 214))
         self.ICIAxesCT.setObjectName("ICIAxesCT")
-        self.ICIPan.setGeometry(QtCore.QRect(300, 214, 650, 42))
+        self.ICIPan.setGeometry(QtCore.QRect(250, 214, 300, 42))
         self.ICIPan.setFrameShape(QtWidgets.QFrame.Box)
         self.ICIPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.ICIPan.setObjectName("ICIPan")
@@ -265,16 +265,16 @@ class Ui_MainWindow(object):
         self.ClickspersecondButton.setObjectName("ClickspersecondButton")
         self.ClickspersecondButton.setChecked(True)
         # ICI radio button
-        self.InterclickintervalmsButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        self.InterclickintervalmsButton.setFont(font)
-        self.InterclickintervalmsButton.setObjectName("InterclickintervalmsButton")
-        # FREQUENCY / BEARING
-        self.FreqAxesCT.setGeometry(QtCore.QRect(20, 464, 960, 210))
+        # self.InterclickintervalmsButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
+        # font = QtGui.QFont()
+        # font.setBold(True)
+        # font.setWeight(75)
+        # self.InterclickintervalmsButton.setFont(font)
+        # self.InterclickintervalmsButton.setObjectName("InterclickintervalmsButton")
+        # FREQUENCY
+        self.FreqAxesCT.setGeometry(QtCore.QRect(20, 464, 700, 210))
         self.FreqAxesCT.setObjectName("FreqAxesCT")
-        self.FreqPan.setGeometry(QtCore.QRect(300, 434, 650, 42))
+        self.FreqPan.setGeometry(QtCore.QRect(250, 434, 300, 42))
         self.FreqPan.setFrameShape(QtWidgets.QFrame.Box)
         self.FreqPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.FreqPan.setObjectName("FreqPan")
@@ -287,16 +287,16 @@ class Ui_MainWindow(object):
         self.CentroidfrequencykHzButton.setObjectName("CentroidfrequencykHzButton")
         self.CentroidfrequencykHzButton.setChecked(True)
         # Bearing radio button
-        self.DirectionofarrivalButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        self.DirectionofarrivalButton.setFont(font)
-        self.DirectionofarrivalButton.setObjectName("DirectionofarrivalButton")
-        ######################
-        ## ACTION AREA
-        ######################
-        self.ActionPan.setGeometry(QtCore.QRect(1020, 150, 360, 700))
+        # self.DirectionofarrivalButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
+        # font = QtGui.QFont()
+        # font.setBold(True)
+        # font.setWeight(75)
+        # self.DirectionofarrivalButton.setFont(font)
+        # self.DirectionofarrivalButton.setObjectName("DirectionofarrivalButton")
+
+        # ACTION AREA
+
+        self.ActionPan.setGeometry(QtCore.QRect(760, 150, 620, 700))
         self.ActionPan.setFrameShape(QtWidgets.QFrame.Box)
         self.ActionPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.ActionPan.setObjectName("ActionPan")
@@ -307,9 +307,9 @@ class Ui_MainWindow(object):
         self.ActionLabel.setFont(font)
         self.ActionLabel.setObjectName("ActionLabel")
         # Waveform & spectrogram
-        self.WaveAxes.setGeometry(10, 60, 340, 300)
+        self.WaveAxes.setGeometry(10, 60, 600, 300)
         self.WaveAxes.setObjectName("WaveAxes")
-        self.SpectAxes.setGeometry(QtCore.QRect(10, 400, 340, 300))
+        self.SpectAxes.setGeometry(QtCore.QRect(10, 400, 600, 300))
         self.SpectAxes.setObjectName("SpectAxes")
 
         # Browse button
@@ -394,10 +394,10 @@ class Ui_MainWindow(object):
         self.AmplitudeDB.setText(_translate("MainWindow",
                                             "<html><head/><body><p><span style=\" font-weight:600\">Amplitude ("
                                             "dB re: 1uPa)</span></p></body></html>"))
-        self.InterclickintervalmsButton.setText(_translate("MainWindow", "Inter-click interval"))
+        # self.InterclickintervalmsButton.setText(_translate("MainWindow", "Inter-click interval"))
         self.ClickspersecondButton.setText(_translate("MainWindow", "Clicks per second"))
         self.CentroidfrequencykHzButton.setText(_translate("MainWindow", "Centroid Frequency"))
-        self.DirectionofarrivalButton.setText(_translate("MainWindow", "Direction of arrival"))
+        # self.DirectionofarrivalButton.setText(_translate("MainWindow", "Direction of arrival"))
         self.MainTab.setTabText(self.MainTab.indexOf(self.MainDisplayTab), _translate("MainWindow", "Main Display"))
 
 
@@ -485,27 +485,27 @@ class Ui_MainWindow(object):
         self.AmpAxesCT.setYRange(80, 150)
 
         # plot click per second (default) or ICI
-        ICIorCPS = self.InterclickintervalmsButton.isChecked()
+        # ICIorCPS = self.InterclickintervalmsButton.isChecked()
 
-        if ICIorCPS == 1:
-            ICILQ = CT1LQ.ICI.to_list()
-            ICIHQ = CT1HQ.ICI.to_list()
-            ICIDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=ICILQ, symbol='o', brush='b', width=2)
-            ICIDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=ICIHQ, symbol='o', brush='r', width=2)
-            self.ICIAxesCT.addItem(ICIDotsLQ)
-            self.ICIAxesCT.addItem(ICIDotsHQ)
-            self.ICIAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.ICIAxesCT.setYRange(0, max(CTTemp.ICI[2:-1]) + 10)
-        else:
+        # if ICIorCPS == 1:
+        #     ICILQ = CT1LQ.ICI.to_list()
+        #     ICIHQ = CT1HQ.ICI.to_list()
+        #     ICIDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=ICILQ, symbol='o', brush='b', width=2)
+        #     ICIDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=ICIHQ, symbol='o', brush='r', width=2)
+        #     self.ICIAxesCT.addItem(ICIDotsLQ)
+        #     self.ICIAxesCT.addItem(ICIDotsHQ)
+        #     self.ICIAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
+        #     self.ICIAxesCT.setYRange(0, max(CTTemp.ICI[2:-1]) + 10)
+        # else:
             # plot clicks per second
-            CPSLQ = CT1LQ.CPS.to_list()
-            CPSHQ = CT1HQ.CPS.to_list()
-            CPSDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=CPSLQ, symbol='o', brush='b', width=2)
-            CPSDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=CPSHQ, symbol='o', brush='r', width=2)
-            self.ICIAxesCT.addItem(CPSDotsLQ)
-            self.ICIAxesCT.addItem(CPSDotsHQ)
-            self.ICIAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
-            self.ICIAxesCT.setYRange(0, max(CTTemp.CPS[2:-1]) + 30)
+        CPSLQ = CT1LQ.CPS.to_list()
+        CPSHQ = CT1HQ.CPS.to_list()
+        CPSDotsLQ = pg.ScatterPlotItem(x=CT1LQ.SumMs, y=CPSLQ, symbol='o', brush='b', width=2)
+        CPSDotsHQ = pg.ScatterPlotItem(x=CT1HQ.SumMs, y=CPSHQ, symbol='o', brush='r', width=2)
+        self.ICIAxesCT.addItem(CPSDotsLQ)
+        self.ICIAxesCT.addItem(CPSDotsHQ)
+        self.ICIAxesCT.setXRange(0, max(CTTemp.SumMs) + 0.1)
+        self.ICIAxesCT.setYRange(0, max(CTTemp.CPS[2:-1]) + 30)
 
         FreqLQ = CT1LQ.CF / 1000
         FreqHQ = CT1HQ.CF / 1000
@@ -565,6 +565,8 @@ class Ui_MainWindow(object):
         and the spectrogram
         """
         global CTTemp, Name
+        self.WaveAxes.clear()
+        self.SpectAxes.clear()
         # Find the file to open
         WavFileToOpen = CTTemp.filename[0]
         s = soundfile.SoundFile(WavFileToOpen)
