@@ -636,8 +636,8 @@ class Ui_MainWindow(object):
         global CTInfo, CP
         SelectedFolder = pathlib.Path(self.SelectedFolder)
         FilesInFolder = SelectedFolder.glob("*")
-        if "AllCTrains.csv" in list(FilesInFolder):
-            FileName = SelectedFolder.joinpath('AllCTrains.csv')
+        FileName = SelectedFolder.joinpath('AllCTrains.csv')
+        if FileName in list(FilesInFolder):
             CP = pd.read_csv(FileName)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             CTInfo = pd.read_csv(CTInfoFileName)
