@@ -571,7 +571,7 @@ class Ui_MainWindow(object):
             Start = 0
 
         # Prepare the signal and compute the spectrogram
-        ctsig = ct_signal.CTSignal(s, End, Start)
+        ctsig = ct_signal.CTSignal(s, Start, End)
         ctsig.prepare_signal()
         sxx = ctsig.spectrogram(nfft=NFFT, scaling='density', mode='Fast', db=True, force_calc=True)
 
