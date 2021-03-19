@@ -45,7 +45,7 @@ def SaveUpdates():
     """
     global VerifyCT, SelectedFolder
     FullNameVerifyCT = SelectedFolder.joinpath('VerifyCT.csv')
-    VerifyCT.to_csv(FullNameVerifyCT)
+    VerifyCT.to_csv(FullNameVerifyCT, index=False)
 
 class WinTable(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
@@ -640,6 +640,8 @@ class Ui_MainWindow(object):
                 List of click trains to verify
         """
         global CTInfo, CP, VerifyCT, SelectedFolder
+        self.upload_val_data.setEnabled(False)
+        self.browse_button.setEnabled(False)
         SelectedFolder = pathlib.Path(self.SelectedFolder)
         FilesInFolder = SelectedFolder.glob("*")
         FileName = SelectedFolder.joinpath('AllCTrains.csv')
