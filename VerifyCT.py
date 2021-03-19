@@ -8,6 +8,7 @@ import pathlib
 import tkinter as tk
 import warnings
 import zipfile
+import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from tkinter import filedialog
 
@@ -35,6 +36,7 @@ Creates pop up windows
 # Fixed parameters
 NFFT = 512
 SAMPLES_SPECTROGRAM = 5760
+Overlap = 128
 
 
 class WinTable(QtWidgets.QMainWindow):
@@ -576,24 +578,24 @@ class Ui_MainWindow(object):
         sxx = ctsig.spectrogram(nfft=NFFT, scaling='density', mode='Fast', db=True, force_calc=True)
 
         # Plot the graphs
-        self.WaveAxes.plot(ctsig.t, ctsig.filtered_signal)
-        plt_item = pg.PColorMeshItem(sxx.T)
-        self.SpectAxes.addItem(plt_item)
+        # self.WaveAxes.plot(ctsig.t, ctsig.filtered_signal)
+        # plt_item = pg.PColorMeshItem(sxx.T)
+        # self.SpectAxes.addItem(plt_item)
 
         # self.ActionPan, (self.WaveAxes, self.SpectAxes) = plt.subplots(nrows=2, sharex=True)
         # Pxx, freqs, bins, im = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
         # self.SpectAxes = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
         # #plt.show()
 
-        # fig, (ax1, ax2) = plt.subplots(nrows=2)
-        # ax1.plot(t, self.filtered_signal)
-        # Pxx, freqs, bins, im = ax2.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, window=window, noverlap=Overlap)
+        fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
+        ax1.plot(ctsig.t, ctsig.filtered_signal)
+        Pxx, freqs, bins, im = ax2.specgram(ctsig.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=Overlap)
         # The `specgram` method returns 4 objects. They are:
         # - Pxx: the periodogram
         # - freqs: the frequency vector
         # - bins: the centers of the time bins
         # - im: the .image.AxesImage instance representing the data in the plot
-        # plt.show()
+        plt.show()
 
     def FromOrdinal(self, x):
         ix = int(x)
