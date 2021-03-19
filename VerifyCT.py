@@ -39,6 +39,14 @@ SAMPLES_SPECTROGRAM = 5760
 Overlap = 128
 
 
+def SaveUpdates():
+    """
+    Saves the updates made to the list of click trains being verified
+    """
+    global VerifyCT, SelectedFolder
+    FullNameVerifyCT = SelectedFolder.joinpath('VerifyCT.csv')
+    VerifyCT.to_csv(FullNameVerifyCT)
+
 class WinTable(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,12 +63,6 @@ class WinTable(QtWidgets.QMainWindow):
 The main tab includes 3 axes to visualise the amplitude, repetition rates, and 
 frequency variations within click trains 
 """
-
-
-def SaveUpdates():
-    global SelectedFolder, AllCTInfo
-    FullNameCTInfo = SelectedFolder + '/AllCTInfo.csv'
-    AllCTInfo.to_csv(FullNameCTInfo)
 
 
 class Ui_MainWindow(object):
@@ -395,13 +397,13 @@ class Ui_MainWindow(object):
         Displays the previous click train
         """
         num_ct = int(self.CTNumD.text())
-        first = CTInfo['NewCT'].iloc[0]
+        first = VerifyCT['NewCT'].iloc[0]
         if num_ct > first:
             self.AmpAxesCT.clear()
             self.ICIAxesCT.clear()
             self.FreqAxesCT.clear()
-            row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
-            num_ct = CTInfo.NewCT[row_ct - 1]
+            row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+            num_ct = VerifyCT.NewCT[row_ct - 1]
             self.update_ct(num_ct, CP, CTInfo)
 
     def ct_forward(self):
@@ -409,15 +411,15 @@ class Ui_MainWindow(object):
         Displays the next click train
         """
         num_ct = int(self.CTNumD.text())
-        tot = CTInfo['NewCT'].iloc[-1]
+        tot = VerifyCT['NewCT'].iloc[-1]
         if num_ct == tot:
             print(num_ct, tot)  # do nothing
         elif num_ct < tot:
             self.AmpAxesCT.clear()
             self.ICIAxesCT.clear()
             self.FreqAxesCT.clear()
-            row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
-            num_ct = CTInfo.NewCT[row_ct + 1]
+            row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+            num_ct = VerifyCT.NewCT[row_ct + 1]
             self.update_ct(num_ct, CP, CTInfo)
 
     def update_ct(self, num_ct, CP, CTInfo):
@@ -536,8 +538,8 @@ class Ui_MainWindow(object):
         """
         self.CorrText.setText('0')
         num_ct = int(self.CTNumD.text())
-        row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
-        CTInfo.Corr[row_ct] = 0
+        row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+        VerifyCT.Corr[row_ct] = 0
 
     def put_right(self):
         """
@@ -546,7 +548,7 @@ class Ui_MainWindow(object):
         """
         self.CorrText.setText('1')
         num_ct = int(self.CTNumD.text())
-        row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
+        row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
         CTInfo.Corr[row_ct] = 1
 
     def CreateSpectrogram(self):
@@ -634,8 +636,10 @@ class Ui_MainWindow(object):
                 by harbour porpoises
         AllCTrains: pandas dataframe
                 Parameters of all clicks belonging to the click trains in AllCTInfo
+        VerifyCT: pandas dataframe
+                List of click trains to verify
         """
-        global CTInfo, CP
+        global CTInfo, CP, VerifyCT, SelectedFolder
         SelectedFolder = pathlib.Path(self.SelectedFolder)
         FilesInFolder = SelectedFolder.glob("*")
         FileName = SelectedFolder.joinpath('AllCTrains.csv')
@@ -643,7 +647,9 @@ class Ui_MainWindow(object):
             CP = pd.read_csv(FileName)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             CTInfo = pd.read_csv(CTInfoFileName)
-            CTNum = CTInfo.NewCT[0]
+            VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
+            VerifyCT = pd.read_csv(VerifyFileName)
+            CTNum = VerifyCT.NewCT[0]
             self.update_ct(CTNum, CP, CTInfo)
         else:
             AllCTInfo = pd.DataFrame()
@@ -692,6 +698,7 @@ class Ui_MainWindow(object):
             num_ct = 1
             self.update_ct(num_ct, CP, CTInfo)
             print('The data is ready to be validated')
+
 
 
 if __name__ == "__main__":
