@@ -8,6 +8,7 @@ import pathlib
 import tkinter as tk
 import warnings
 import zipfile
+import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from tkinter import filedialog
 
@@ -35,6 +36,7 @@ Creates pop up windows
 # Fixed parameters
 NFFT = 512
 SAMPLES_SPECTROGRAM = 5760
+Overlap = 128
 
 
 class WinTable(QtWidgets.QMainWindow):
@@ -53,12 +55,6 @@ class WinTable(QtWidgets.QMainWindow):
 The main tab includes 3 axes to visualise the amplitude, repetition rates, and 
 frequency variations within click trains 
 """
-
-
-def SaveUpdates():
-    global SelectedFolder, AllCTInfo
-    FullNameCTInfo = SelectedFolder + '/AllCTInfo.csv'
-    AllCTInfo.to_csv(FullNameCTInfo)
 
 
 class Ui_MainWindow(object):
@@ -103,7 +99,7 @@ class Ui_MainWindow(object):
         self.ClickspersecondButton = QtWidgets.QRadioButton(self.ICIPan)
         # self.InterclickintervalmsButton = QtWidgets.QRadioButton(self.ICIPan)
 
-        self.SaveupdatesButton = QtWidgets.QPushButton(self.DisplaySettings)
+        self.save_button = QtWidgets.QPushButton(self.DisplaySettings)
 
         self.CTPan = QtWidgets.QFrame(self.DisplaySettings)
         self.CTTypeLabel = QtWidgets.QLabel(self.CTPan)
@@ -111,6 +107,9 @@ class Ui_MainWindow(object):
         self.CorrPan = QtWidgets.QFrame(self.DisplaySettings)
         self.CorrLabel = QtWidgets.QLabel(self.CorrPan)
         self.CorrText = QtWidgets.QLabel(self.CorrPan)
+        self.VerPan = QtWidgets.QFrame(self.DisplaySettings)
+        self.VerLabel = QtWidgets.QLabel(self.VerPan)
+        self.VerText = QtWidgets.QLabel(self.VerPan)
         self.CTInfoPan = QtWidgets.QFrame(self.DisplaySettings)
         self.TotalLabel = QtWidgets.QLabel(self.CTInfoPan)
         self.CTForw = QtWidgets.QPushButton(self.CTInfoPan)
@@ -168,13 +167,13 @@ class Ui_MainWindow(object):
         self.DatePan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.DatePan.setObjectName("DatePan")
         self.DateandtimeofCTLabel.setGeometry(QtCore.QRect(5, 60, 180, 30))
-        self.DateandtimeofCTLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.DateandtimeofCTLabel.setAlignment(QtCore.Qt.AlignLeft)
         self.DateandtimeofCTLabel.setObjectName("DateandtimeofCTLabel")
         self.DateLabel.setGeometry(QtCore.QRect(80, 20, 50, 30))
         self.DateLabel.setTextFormat(QtCore.Qt.RichText)
         self.DateLabel.setObjectName("DateLabel")
         # CT Type area
-        self.CTPan.setGeometry(QtCore.QRect(220, 8, 100, 106))
+        self.CTPan.setGeometry(QtCore.QRect(215, 8, 95, 106))
         self.CTPan.setFrameShape(QtWidgets.QFrame.Box)
         self.CTPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.CTPan.setObjectName("CTPan")
@@ -185,44 +184,55 @@ class Ui_MainWindow(object):
         self.CTTypeLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.CTTypeLabel.setObjectName("CTTypeLabel")
         # Correction section
-        self.CorrPan.setGeometry(QtCore.QRect(330, 8, 90, 106))
+        self.CorrPan.setGeometry(QtCore.QRect(315, 8, 80, 106))
         self.CorrPan.setFrameShape(QtWidgets.QFrame.Box)
         self.CorrPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.CorrPan.setObjectName("CorrPan")
-        self.CorrLabel.setGeometry(QtCore.QRect(10, 20, 70, 30))
+        self.CorrLabel.setGeometry(QtCore.QRect(10, 20, 60, 30))
         self.CorrLabel.setTextFormat(QtCore.Qt.RichText)
         self.CorrLabel.setObjectName("CorrLabel")
         self.CorrText.setGeometry(QtCore.QRect(20, 60, 50, 30))
         self.CorrText.setAlignment(QtCore.Qt.AlignCenter)
         self.CorrText.setObjectName("CorrText")
+        # Correction section
+        self.VerPan.setGeometry(QtCore.QRect(400, 8, 80, 106))
+        self.VerPan.setFrameShape(QtWidgets.QFrame.Box)
+        self.VerPan.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.VerPan.setObjectName("VerPan")
+        self.VerLabel.setGeometry(QtCore.QRect(10, 20, 60, 30))
+        self.VerLabel.setTextFormat(QtCore.Qt.RichText)
+        self.VerLabel.setObjectName("VerLabel")
+        self.VerText.setGeometry(QtCore.QRect(20, 60, 50, 30))
+        self.VerText.setAlignment(QtCore.Qt.AlignCenter)
+        self.VerText.setObjectName("VerText")
         # CT Info area
-        self.CTInfoPan.setGeometry(QtCore.QRect(430, 8, 320, 106))
+        self.CTInfoPan.setGeometry(QtCore.QRect(485, 8, 300, 106))
         self.CTInfoPan.setFrameShape(QtWidgets.QFrame.Box)
         self.CTInfoPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.CTInfoPan.setObjectName("CTInfoPan")
-        self.CTNumLabel.setGeometry(QtCore.QRect(60, 20, 250, 30))
+        self.CTNumLabel.setGeometry(QtCore.QRect(35, 20, 230, 30))
         self.CTNumLabel.setTextFormat(QtCore.Qt.RichText)
         self.CTNumLabel.setObjectName("CTNumLabel")
-        self.CTBack.setGeometry(QtCore.QRect(30, 60, 40, 30))
+        self.CTBack.setGeometry(QtCore.QRect(10, 60, 40, 30))
         self.CTBack.setObjectName("CTBack")
         self.CTBack.clicked.connect(self.ct_back)
-        self.CTNumD.setGeometry(QtCore.QRect(73, 60, 80, 30))
+        self.CTNumD.setGeometry(QtCore.QRect(53, 60, 80, 30))
         self.CTNumD.setObjectName("CTNumD")
-        self.CTForw.setGeometry(QtCore.QRect(156, 60, 40, 30))
+        self.CTForw.setGeometry(QtCore.QRect(136, 60, 40, 30))
         self.CTForw.setObjectName("CTForw")
         self.CTForw.clicked.connect(self.ct_forward)
-        self.TotalLabel.setGeometry(QtCore.QRect(210, 60, 100, 30))
+        self.TotalLabel.setGeometry(QtCore.QRect(210, 60, 70, 30))
         self.TotalLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.TotalLabel.setObjectName("TotalLabel")
 
         # Save button
-        self.SaveupdatesButton.setGeometry(QtCore.QRect(1265, 8, 95, 106))
-        self.SaveupdatesButton.setLayoutDirection(QtCore.Qt.RightToLeft)
-        self.SaveupdatesButton.setAutoDefault(False)
-        self.SaveupdatesButton.setDefault(False)
-        self.SaveupdatesButton.setFlat(False)
-        self.SaveupdatesButton.setObjectName("SaveupdatesButton")
-        self.SaveupdatesButton.clicked.connect(SaveUpdates)
+        self.save_button.setGeometry(QtCore.QRect(1270, 8, 95, 106))
+        self.save_button.setLayoutDirection(QtCore.Qt.RightToLeft)
+        self.save_button.setAutoDefault(False)
+        self.save_button.setDefault(False)
+        self.save_button.setFlat(False)
+        self.save_button.setObjectName("save_button")
+        self.save_button.clicked.connect(self.save_updates)
         ##################
         ## AXES AREA
         ##################
@@ -252,14 +262,7 @@ class Ui_MainWindow(object):
         self.ClickspersecondButton.setFont(font)
         self.ClickspersecondButton.setObjectName("ClickspersecondButton")
         self.ClickspersecondButton.setChecked(True)
-        # ICI radio button
-        # self.InterclickintervalmsButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
-        # font = QtGui.QFont()
-        # font.setBold(True)
-        # font.setWeight(75)
-        # self.InterclickintervalmsButton.setFont(font)
-        # self.InterclickintervalmsButton.setObjectName("InterclickintervalmsButton")
-        # FREQUENCY
+
         self.FreqAxesCT.setGeometry(QtCore.QRect(20, 464, 700, 210))
         self.FreqAxesCT.setObjectName("FreqAxesCT")
         self.FreqPan.setGeometry(QtCore.QRect(250, 434, 300, 42))
@@ -274,16 +277,8 @@ class Ui_MainWindow(object):
         self.CentroidfrequencykHzButton.setFont(font)
         self.CentroidfrequencykHzButton.setObjectName("CentroidfrequencykHzButton")
         self.CentroidfrequencykHzButton.setChecked(True)
-        # Bearing radio button
-        # self.DirectionofarrivalButton.setGeometry(QtCore.QRect(250, 10, 200, 20))
-        # font = QtGui.QFont()
-        # font.setBold(True)
-        # font.setWeight(75)
-        # self.DirectionofarrivalButton.setFont(font)
-        # self.DirectionofarrivalButton.setObjectName("DirectionofarrivalButton")
 
         # ACTION AREA
-
         self.ActionPan.setGeometry(QtCore.QRect(760, 150, 620, 700))
         self.ActionPan.setFrameShape(QtWidgets.QFrame.Box)
         self.ActionPan.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -302,26 +297,25 @@ class Ui_MainWindow(object):
 
         # Browse button
         self.SelectLabel = QtWidgets.QLabel(self.DisplaySettings)
-        self.SelectLabel.setGeometry(820, 8, 150, 20)
+        self.SelectLabel.setGeometry(840, 8, 150, 20)
         self.SelectLabel.setText('Select a folder')
         self.FolderPathDet = QtWidgets.QLineEdit(self.DisplaySettings)
-        self.FolderPathDet.setGeometry(820, 40, 320, 30)
+        self.FolderPathDet.setGeometry(840, 40, 320, 30)
         self.FolderPathDet.setText("C:/")
         # Browse button
         self.browse_button = QtWidgets.QPushButton(self.DisplaySettings)
-        self.browse_button.setGeometry(1040, 82, 100, 30)
+        self.browse_button.setGeometry(1060, 82, 100, 30)
         self.browse_button.setText("Browse")
         self.browse_button.clicked.connect(self.click_browse_button)
-        self.upload_val_data.setGeometry(QtCore.QRect(1155, 8, 100, 106))
+        # Upload data
+        self.upload_val_data.setGeometry(QtCore.QRect(1165, 8, 100, 106))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
-
-        # Click train in 3D
         self.upload_val_data.setFont(font)
         self.upload_val_data.setObjectName("upload_val_data")
         self.upload_val_data.clicked.connect(self.upload_data)
-        self.wrong_button.setGeometry(QtCore.QRect(760, 8, 40, 48))
+        self.wrong_button.setGeometry(QtCore.QRect(790, 8, 40, 48))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
@@ -330,7 +324,7 @@ class Ui_MainWindow(object):
         self.wrong_button.setObjectName("wrong_button")
         self.wrong_button.clicked.connect(self.put_wrong)
 
-        self.right_button.setGeometry(QtCore.QRect(760, 65, 40, 48))
+        self.right_button.setGeometry(QtCore.QRect(790, 65, 40, 48))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
@@ -363,13 +357,17 @@ class Ui_MainWindow(object):
         self.CorrLabel.setText(_translate("MainWindow",
                                           "<html><head/><body><p><span style=\" "
                                           "font-weight:600\">Correct</span></p></body></html>"))
-        self.SaveupdatesButton.setText(_translate("MainWindow", " Save \n"
-                                                                "updates"))
+        self.VerLabel.setText(_translate("MainWindow",
+                                          "<html><head/><body><p><span style=\" "
+                                          "font-weight:600\">Done</span></p></body></html>"))
+        self.save_button.setText(_translate("MainWindow", " Save \n"
+                                                                "changes"))
         self.CTLabel.setText(_translate("MainWindow",
                                         "<html><head/><body><p><span style=\" font-weight:600\">CT "
                                         "Type</span></p></body></html>"))
         self.CTTypeLabel.setText(_translate("MainWindow", "NBHF"))
         self.CorrText.setText(_translate("MainWindow", "1"))
+        self.VerText.setText(_translate("MainWindow", "1"))
         self.DateLabel.setText(_translate("MainWindow",
                                           "<html><head/><body><p><span style=\" "
                                           "font-weight:600\">Date</span></p></body></html>"))
@@ -393,32 +391,32 @@ class Ui_MainWindow(object):
         Displays the previous click train
         """
         num_ct = int(self.CTNumD.text())
-        first = CTInfo['NewCT'].iloc[0]
+        first = VerifyCT['NewCT'].iloc[0]
         if num_ct > first:
             self.AmpAxesCT.clear()
             self.ICIAxesCT.clear()
             self.FreqAxesCT.clear()
-            row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
-            num_ct = CTInfo.NewCT[row_ct - 1]
-            self.update_ct(num_ct, CP, CTInfo)
+            row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+            num_ct = VerifyCT.NewCT[row_ct - 1]
+            self.update_ct(num_ct, CP, CTInfo, VerifyCT)
 
     def ct_forward(self):
         """
         Displays the next click train
         """
         num_ct = int(self.CTNumD.text())
-        tot = CTInfo['NewCT'].iloc[-1]
+        tot = VerifyCT['NewCT'].iloc[-1]
         if num_ct == tot:
             print(num_ct, tot)  # do nothing
         elif num_ct < tot:
             self.AmpAxesCT.clear()
             self.ICIAxesCT.clear()
             self.FreqAxesCT.clear()
-            row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
-            num_ct = CTInfo.NewCT[row_ct + 1]
-            self.update_ct(num_ct, CP, CTInfo)
+            row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+            num_ct = VerifyCT.NewCT[row_ct + 1]
+            self.update_ct(num_ct, CP, CTInfo, VerifyCT)
 
-    def update_ct(self, num_ct, CP, CTInfo):
+    def update_ct(self, num_ct, CP, CTInfo, VerifyCT):
         """
         This function updates the plots in the main display
         :param num_ct: int
@@ -453,10 +451,11 @@ class Ui_MainWindow(object):
         CT1HQ = CTTemp[CTTemp['pyPorCC'] == 1]
         CT1LQ = CTTemp[CTTemp['pyPorCC'] == 2]
         self.CTNumD.setText(str(num_ct))
-        self.CTTypeLabel.setText(str(CTInfo.Species[CTInfo.NewCT == num_ct].values[0]))
+        self.CTTypeLabel.setText(str(VerifyCT.Species[VerifyCT.NewCT == num_ct].values[0]))
         self.DateandtimeofCTLabel.setText(str(CTInfo.Date[CTInfo.NewCT == num_ct].values[0]))
         self.TotalLabel.setText('(' + str(CTInfo['NewCT'].iloc[-1]) + ')')
-        self.CorrText.setText(str(CTInfo.Corr[CTInfo.NewCT == num_ct].values[0]))
+        self.CorrText.setText(str(VerifyCT.Corr[VerifyCT.NewCT == num_ct].values[0]))
+        self.VerText.setText(str(VerifyCT.Verified[VerifyCT.NewCT == num_ct].values[0]))
 
         self.AmpAxesCT.clear()
         # TODO set the max and min in all axis (think of SoundTrap data)
@@ -534,8 +533,8 @@ class Ui_MainWindow(object):
         """
         self.CorrText.setText('0')
         num_ct = int(self.CTNumD.text())
-        row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
-        CTInfo.Corr[row_ct] = 0
+        row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+        VerifyCT.Corr[row_ct] = 0
 
     def put_right(self):
         """
@@ -544,8 +543,8 @@ class Ui_MainWindow(object):
         """
         self.CorrText.setText('1')
         num_ct = int(self.CTNumD.text())
-        row_ct = CTInfo[CTInfo.NewCT == num_ct].index[0]
-        CTInfo.Corr[row_ct] = 1
+        row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+        VerifyCT.Corr[row_ct] = 1
 
     def CreateSpectrogram(self):
         """
@@ -576,24 +575,24 @@ class Ui_MainWindow(object):
         sxx = ctsig.spectrogram(nfft=NFFT, scaling='density', mode='Fast', db=True, force_calc=True)
 
         # Plot the graphs
-        self.WaveAxes.plot(ctsig.t, ctsig.filtered_signal)
-        plt_item = pg.PColorMeshItem(sxx.T)
-        self.SpectAxes.addItem(plt_item)
+        # self.WaveAxes.plot(ctsig.t, ctsig.filtered_signal)
+        # plt_item = pg.PColorMeshItem(sxx.T)
+        # self.SpectAxes.addItem(plt_item)
 
         # self.ActionPan, (self.WaveAxes, self.SpectAxes) = plt.subplots(nrows=2, sharex=True)
         # Pxx, freqs, bins, im = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
         # self.SpectAxes = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
         # #plt.show()
 
-        # fig, (ax1, ax2) = plt.subplots(nrows=2)
-        # ax1.plot(t, self.filtered_signal)
-        # Pxx, freqs, bins, im = ax2.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, window=window, noverlap=Overlap)
+        fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
+        ax1.plot(ctsig.t, ctsig.filtered_signal)
+        Pxx, freqs, bins, im = ax2.specgram(ctsig.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=Overlap)
         # The `specgram` method returns 4 objects. They are:
         # - Pxx: the periodogram
         # - freqs: the frequency vector
         # - bins: the centers of the time bins
         # - im: the .image.AxesImage instance representing the data in the plot
-        # plt.show()
+        plt.show()
 
     def FromOrdinal(self, x):
         ix = int(x)
@@ -632,8 +631,12 @@ class Ui_MainWindow(object):
                 by harbour porpoises
         AllCTrains: pandas dataframe
                 Parameters of all clicks belonging to the click trains in AllCTInfo
+        VerifyCT: pandas dataframe
+                List of click trains to verify
         """
-        global CTInfo, CP
+        global CTInfo, CP, VerifyCT, SelectedFolder
+        self.upload_val_data.setEnabled(False)
+        self.browse_button.setEnabled(False)
         SelectedFolder = pathlib.Path(self.SelectedFolder)
         FilesInFolder = SelectedFolder.glob("*")
         FileName = SelectedFolder.joinpath('AllCTrains.csv')
@@ -641,8 +644,11 @@ class Ui_MainWindow(object):
             CP = pd.read_csv(FileName)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             CTInfo = pd.read_csv(CTInfoFileName)
-            CTNum = CTInfo.NewCT[0]
-            self.update_ct(CTNum, CP, CTInfo)
+            VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
+            VerifyCT = pd.read_csv(VerifyFileName)
+            row = VerifyCT[VerifyCT.Verified == 0].index[0]
+            ct_num = VerifyCT.NewCT[row]
+            self.update_ct(ct_num, CP, CTInfo, VerifyCT)
         else:
             AllCTInfo = pd.DataFrame()
             AllCTrains = pd.DataFrame()
@@ -688,9 +694,19 @@ class Ui_MainWindow(object):
             CTInfo = AllCTInfo
             CP = AllCTrains
             num_ct = 1
-            self.update_ct(num_ct, CP, CTInfo)
+            self.update_ct(num_ct, CP, CTInfo, VerifyCT)
             print('The data is ready to be validated')
 
+    def save_updates(self):
+        """
+        Saves the updates made to the list of click trains being verified
+        """
+        global VerifyCT, SelectedFolder
+        num_ct = int(self.CTNumD.text())
+        row_ct = VerifyCT[VerifyCT.NewCT == num_ct].index[0]
+        VerifyCT.Verified[0:row_ct] = 1
+        FullNameVerifyCT = SelectedFolder.joinpath('VerifyCT.csv')
+        VerifyCT.to_csv(FullNameVerifyCT, index=False)
 
 if __name__ == "__main__":
     import sys
