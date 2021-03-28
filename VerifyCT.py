@@ -629,7 +629,7 @@ class Ui_MainWindow(object):
         AllCTInfo: pandas dataframe
                 Summary data of ll click trains identified as either high- or low-quality click trains produced
                 by harbour porpoises
-        AllCTrains: pandas dataframe
+        AllClicks: pandas dataframe
                 Parameters of all clicks belonging to the click trains in AllCTInfo
         VerifyCT: pandas dataframe
                 List of click trains to verify
@@ -639,7 +639,7 @@ class Ui_MainWindow(object):
         self.browse_button.setEnabled(False)
         SelectedFolder = pathlib.Path(self.SelectedFolder)
         FilesInFolder = SelectedFolder.glob("*")
-        FileName = SelectedFolder.joinpath('AllCTrains.csv')
+        FileName = SelectedFolder.joinpath('AllClicks.csv')
         if FileName in list(FilesInFolder):
             CP = pd.read_csv(FileName)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
@@ -651,27 +651,27 @@ class Ui_MainWindow(object):
             self.update_ct(ct_num, CP, CTInfo, VerifyCT)
         else:
             AllCTInfo = pd.DataFrame()
-            AllCTrains = pd.DataFrame()
+            AllClicks = pd.DataFrame()
             NewCTNum = 0
             FilesAndFolders = SelectedFolder.glob("*")
             Folders = [s for s in FilesAndFolders if s.is_dir()]
             if len(Folders) == 0:
-                AllCTrains = pd.read_csv(SelectedFolder.joinpath('CTrains.csv'))
+                AllClicks = pd.read_csv(SelectedFolder.joinpath('Clicks.csv'))
                 AllCTInfo = pd.read_csv(SelectedFolder.joinpath('CTInfo.csv'))
-                AllCTInfo = AllCTInfo[AllCTInfo.Species != 'Non-NBHF']
+                AllCTInfo = AllCTInfo[AllCTInfo.Species != 'Noise']
                 AllCTInfo.reset_index(inplace=True, drop=True)
                 AllCTInfo['NewCT'] = AllCTInfo.CTNum
                 AllCTInfo['Corr'] = 1
             else:
                 for SubFolder in Folders:
                     print('Processing subfolder', SubFolder)
-                    ThisCP = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('CTrains.csv'))
+                    ThisCP = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('Clicks.csv'))
                     ThisCTInfo = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('CTInfo.csv'))
-                    CTInfo = ThisCTInfo[ThisCTInfo.Species != 'Non-NBHF']
+                    CTInfo = ThisCTInfo[ThisCTInfo.Species != 'Noise']
                     CTInfo.reset_index(inplace=True, drop=True)
                     CTInfo['NewCT'] = 0
                     if len(CTInfo) > 0:
-                        CTrains = pd.DataFrame()
+                        Clicks = pd.DataFrame()
                         for i in range(0, len(CTInfo)):
                             NewCTNum = NewCTNum + 1
                             NumCT = CTInfo.CTNum[i]
@@ -680,20 +680,22 @@ class Ui_MainWindow(object):
                             CTTemp = ThisCP[ThisCP.CT == NumCT]
                             CTTemp.reset_index(inplace=True, drop=True)
                             CTTemp['NewCT'] = NewCTNum
-                            CTrains = CTrains.append(CTTemp, ignore_index=True)
+                            Clicks = Clicks.append(CTTemp, ignore_index=True)
                         AllCTInfo.reset_index(inplace=True, drop=True)
-                        AllCTrains.reset_index(inplace=True, drop=True)
+                        AllClicks.reset_index(inplace=True, drop=True)
                         AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
-                        AllCTrains = AllCTrains.append(CTrains, ignore_index=True)
+                        AllClicks = AllClicks.append(Clicks, ignore_index=True)
 
-            CTFileName = SelectedFolder.joinpath('AllCTrains.csv')
-            AllCTrains.to_csv(CTFileName, index=False)
+            CTFileName = SelectedFolder.joinpath('AllClicks.csv')
+            AllClicks.to_csv(CTFileName, index=False)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             AllCTInfo.to_csv(CTInfoFileName, index=False)
-
+            VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
+            VerifyCT = pd.read_csv(VerifyFileName)
+            row = VerifyCT[VerifyCT.Verified == 0].index[0]
+            ct_num = VerifyCT.NewCT[row]
             CTInfo = AllCTInfo
-            CP = AllCTrains
-            num_ct = 1
+            CP = AllClicks
             self.update_ct(num_ct, CP, CTInfo, VerifyCT)
             print('The data is ready to be validated')
 
