@@ -451,7 +451,7 @@ class Ui_MainWindow(object):
         CT1HQ = CTTemp[CTTemp['pyPorCC'] == 1]
         CT1LQ = CTTemp[CTTemp['pyPorCC'] == 2]
         self.CTNumD.setText(str(num_ct))
-        self.CTTypeLabel.setText(str(VerifyCT.Species[VerifyCT.NewCT == num_ct].values[0]))
+        self.CTTypeLabel.setText(str(VerifyCT.CTType[VerifyCT.NewCT == num_ct].values[0]))
         self.DateandtimeofCTLabel.setText(str(CTInfo.Date[CTInfo.NewCT == num_ct].values[0]))
         self.TotalLabel.setText('(' + str(CTInfo['NewCT'].iloc[-1]) + ')')
         self.CorrText.setText(str(VerifyCT.Corr[VerifyCT.NewCT == num_ct].values[0]))
@@ -658,7 +658,7 @@ class Ui_MainWindow(object):
             if len(Folders) == 0:
                 AllClicks = pd.read_csv(SelectedFolder.joinpath('Clicks.csv'))
                 AllCTInfo = pd.read_csv(SelectedFolder.joinpath('CTInfo.csv'))
-                AllCTInfo = AllCTInfo[AllCTInfo.Species != 'Noise']
+                AllCTInfo = AllCTInfo[AllCTInfo.CTType != 'Noise']
                 AllCTInfo.reset_index(inplace=True, drop=True)
                 AllCTInfo['NewCT'] = AllCTInfo.CTNum
                 AllCTInfo['Corr'] = 1
@@ -667,7 +667,7 @@ class Ui_MainWindow(object):
                     print('Processing subfolder', SubFolder)
                     ThisCP = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('Clicks.csv'))
                     ThisCTInfo = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('CTInfo.csv'))
-                    CTInfo = ThisCTInfo[ThisCTInfo.Species != 'Noise']
+                    CTInfo = ThisCTInfo[ThisCTInfo.CTType != 'Noise']
                     CTInfo.reset_index(inplace=True, drop=True)
                     CTInfo['NewCT'] = 0
                     if len(CTInfo) > 0:
