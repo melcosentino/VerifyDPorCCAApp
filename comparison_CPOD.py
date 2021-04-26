@@ -63,11 +63,11 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
     CTInfo = pd.read_csv(CTInfo_path, parse_dates=['Date'], infer_datetime_format=True)
     CTrains = pd.read_csv(CTrains_path, parse_dates=['datetime'], infer_datetime_format=True)
     AllCTInfo = add_end_ct(CTInfo, CTrains)
-    DPorCCA_ppm = positive_porpoise_minute(AllCTInfo, class_column='Species', end_column='EndCT',
+    DPorCCA_ppm = positive_porpoise_minute(AllCTInfo, class_column='CTType', end_column='EndCT',
                                            date_column='Date', hq='NBHF', lq='LQ-NBHF')
 
     # FROM CPOD TO COMPARISON TABLE
-    CPOD_validated = pd.read_csv(CPOD_validated_path, parse_dates=['Time'], infer_datetime_format=True, dayfirst=True)
+    CPOD_validated = pd.read_table(CPOD_validated_path, parse_dates=['Time'], infer_datetime_format=True, dayfirst=True)
     CPOD_validated.loc[CPOD_validated['TrClass'] == "Low", 'Species'] = 'LQ-NBHF'
     CPOD_validated.loc[
         ((CPOD_validated['TrClass'] == "High") | (CPOD_validated['TrClass'] == 'Mod')), 'Species'] = 'NBHF'
@@ -82,7 +82,16 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
     validation_minutes.loc[(validation_minutes['ppm_relaxed_DPorCCA'] == 0) &
                            (validation_minutes['ppm_relaxed_CPOD'] == 0), 'validation'] = 0
 
-    return validation_minutes
+    AllCTInfo['Verified'] = 0
+    AllCTInfo['Validation'] = 0
+    minutes_idxs = AllCTInfo.Date.dt.round('min')
+    end_minutes_idxs = AllCTInfo.EndCT.dt.round('min')
+    for i, row in validation_minutes.iterrows():
+        if row.loc['validation'] == 1:
+            AllCTInfo.loc[minutes_idxs == i, 'Validation'] = 1
+            AllCTInfo.loc[end_minutes_idxs == i, 'Validation'] = 1
+
+    return validation_minutes, AllCTInfo[AllCTInfo.Validation == 1]
 
 
 def compare_validated(validation, validated_CT, validated_CT_info):
@@ -104,8 +113,8 @@ if __name__ == "__main__":
 
     CTInfo_path = 'CTInfo.csv'
     CTrains_path = 'CTrains.csv'
-    CPOD_path = 'CPOD_validation.csv'
-    CTInfo_validated_path = 'CTInfo_val.csv'
+    CPOD_path = 'CPOD.txt'
+    CTInfo_validated_path = 'VerifyCT_cpod.csv'
     v = select_validation(CTInfo_path, CTrains_path, CPOD_path)
     v_CT = pd.read_csv(CTInfo_validated_path, parse_dates=['Date'], infer_datetime_format=True)
     v_CT_info = pd.read_csv(CTrains_path, parse_dates=['datetime'], infer_datetime_format=True)

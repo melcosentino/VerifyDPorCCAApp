@@ -18,6 +18,7 @@ import soundfile
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import ct_signal
+import comparison_CPOD
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 pd.options.mode.chained_assignment = None
@@ -307,6 +308,11 @@ class Ui_MainWindow(object):
         self.browse_button.setGeometry(1060, 82, 100, 30)
         self.browse_button.setText("Browse")
         self.browse_button.clicked.connect(self.click_browse_button)
+        # CPOD txt output
+        self.cpod = QtWidgets.QCheckBox(self.DisplaySettings)
+        self.cpod.setGeometry(850, 82, 200, 30)
+        self.cpod.setText('Compare with CPOD')
+        self.cpod.setChecked(False)
         # Upload data
         self.upload_val_data.setGeometry(QtCore.QRect(1165, 8, 100, 106))
         font = QtGui.QFont()
@@ -644,6 +650,7 @@ class Ui_MainWindow(object):
             CP = pd.read_csv(FileName)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             CTInfo = pd.read_csv(CTInfoFileName)
+            CP = CP.merge(CTInfo[['CTNum', 'NewCT']], left_on='CT', right_on='CTNum')
             VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
             VerifyCT = pd.read_csv(VerifyFileName)
             row = VerifyCT[VerifyCT.Verified == 0].index[0]
@@ -662,6 +669,7 @@ class Ui_MainWindow(object):
                 AllCTInfo.reset_index(inplace=True, drop=True)
                 AllCTInfo['NewCT'] = AllCTInfo.CTNum
                 AllCTInfo['Corr'] = 1
+
             else:
                 for SubFolder in Folders:
                     print('Processing subfolder', SubFolder)
@@ -691,12 +699,21 @@ class Ui_MainWindow(object):
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             AllCTInfo.to_csv(CTInfoFileName, index=False)
             VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
-            VerifyCT = pd.read_csv(VerifyFileName)
+            if self.cpod.isChecked():
+                # If the cpod checkbox is checked then check for the CPOD.txt file
+                CPODFileName = SelectedFolder.joinpath('CPOD.txt')
+                validation_minutes, VerifyCT = comparison_CPOD.select_validation(CTInfoFileName, CTFileName, CPODFileName)
+                validation_minutes.to_csv('VerifyCT_cpod.csv')
+            else:
+                VerifyCT = AllCTInfo
+                VerifyCT['Verified'] = 0
+            VerifyCT.to_csv(VerifyFileName)
             row = VerifyCT[VerifyCT.Verified == 0].index[0]
             ct_num = VerifyCT.NewCT[row]
             CTInfo = AllCTInfo
             CP = AllClicks
-            self.update_ct(num_ct, CP, CTInfo, VerifyCT)
+            CP = CP.merge(CTInfo[['CTNum', 'NewCT']], left_on='CT', right_on='CTNum')
+            self.update_ct(ct_num, CP, CTInfo, VerifyCT)
             print('The data is ready to be validated')
 
     def save_updates(self):
@@ -710,9 +727,9 @@ class Ui_MainWindow(object):
         FullNameVerifyCT = SelectedFolder.joinpath('VerifyCT.csv')
         VerifyCT.to_csv(FullNameVerifyCT, index=False)
 
+
 if __name__ == "__main__":
     import sys
-
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("fusion")
     MainWindow = QtWidgets.QMainWindow()
