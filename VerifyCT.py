@@ -700,10 +700,11 @@ class Ui_MainWindow(object):
             AllCTInfo.to_csv(CTInfoFileName, index=False)
             VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
             if self.cpod.isChecked():
+                VerifyCPODFileName = SelectedFolder.joinpath('VerifyCT_cpod.csv')
                 # If the cpod checkbox is checked then check for the CPOD.txt file
                 CPODFileName = SelectedFolder.joinpath('CPOD.txt')
                 validation_minutes, VerifyCT = comparison_CPOD.select_validation(CTInfoFileName, CTFileName, CPODFileName)
-                validation_minutes.to_csv('VerifyCT_cpod.csv')
+                validation_minutes.to_csv(VerifyCPODFileName)
             else:
                 VerifyCT = AllCTInfo
                 VerifyCT['Verified'] = 0
