@@ -80,11 +80,11 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
 
     # FROM CPOD TO COMPARISON TABLE
     CPOD_validated = pd.read_table(CPOD_validated_path, parse_dates=['Time'], infer_datetime_format=True, dayfirst=True)
-    CPOD_validated.loc[CPOD_validated['TrClass'] == "Low", 'Species'] = 'LQ-NBHF'
+    CPOD_validated.loc[CPOD_validated['TrClass'] == "Low", 'CTType'] = 'LQ-NBHF'
     CPOD_validated.loc[
-        ((CPOD_validated['TrClass'] == "High") | (CPOD_validated['TrClass'] == 'Mod')), 'Species'] = 'NBHF'
+        ((CPOD_validated['TrClass'] == "High") | (CPOD_validated['TrClass'] == 'Mod')), 'CTType'] = 'NBHF'
     CPOD_validated['EndTr'] = pd.to_timedelta(CPOD_validated['TrDur_us'], 'us') + CPOD_validated['Time']
-    CPOD_ppm = positive_porpoise_minute(CPOD_validated, class_column='Species', date_column='Time',
+    CPOD_ppm = positive_porpoise_minute(CPOD_validated, class_column='CTType', date_column='Time',
                                         end_column='EndTr', hq='NBHF', lq='LQ-NBHF')
 
     validation_minutes = DPorCCA_ppm.merge(CPOD_ppm, suffixes=['_DPorCCA', '_CPOD'], left_index=True, right_index=True)
@@ -108,10 +108,10 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
 
 def compare_validated(validation, validated_CT, validated_CT_info):
     validated_CT['PorpoisePresence'] = 0
-    validated_CT.loc[(validated_CT['Corr'] == 1) & (validated_CT['Species'] == 'Non-NBHF'), 'PorpoisePresence'] = 0
-    validated_CT.loc[(validated_CT['Corr'] == 1) & (validated_CT['Species'] != 'Non-NBHF'), 'PorpoisePresence'] = 1
-    validated_CT.loc[(validated_CT['Corr'] == 0) & (validated_CT['Species'] == 'Non-NBHF'), 'PorpoisePresence'] = 1
-    validated_CT.loc[(validated_CT['Corr'] == 0) & (validated_CT['Species'] != 'Non-NBHF'), 'PorpoisePresence'] = 0
+    validated_CT.loc[(validated_CT['Corr'] == 1) & (validated_CT['CTType'] == 'Noise'), 'PorpoisePresence'] = 0
+    validated_CT.loc[(validated_CT['Corr'] == 1) & (validated_CT['CTType'] != 'Noise'), 'PorpoisePresence'] = 1
+    validated_CT.loc[(validated_CT['Corr'] == 0) & (validated_CT['CTType'] == 'Noise'), 'PorpoisePresence'] = 1
+    validated_CT.loc[(validated_CT['Corr'] == 0) & (validated_CT['CTType'] != 'Noise'), 'PorpoisePresence'] = 0
     validated_CT = add_end_ct(validated_CT, validated_CT_info)
     ppm_validated = positive_porpoise_minute(validated_CT, date_column='Date', class_column='PorpoisePresence',
                                              end_column='EndCT', hq=1, lq=1)
