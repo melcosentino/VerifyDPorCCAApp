@@ -26,21 +26,32 @@ def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq):
     ppm_df = pd.DataFrame(columns=['ppm_strict', 'ppm_relaxed'], index=minutes_idxs)
     ppm_df['ppm_strict'] = 0
     ppm_df['ppm_relaxed'] = 0
-    # Select all the different minutes in the dataframe
-    minutes_list = df.minutes_ppm.unique()
-    for min_idx, minute in enumerate(minutes_list):
-        all_min_clicks = df.loc[df['minutes_ppm'] == minute]
-        # If the last CT of the minute is goes to the next minute, add the next minute as ppm
-        last_ct = all_min_clicks.iloc[-1]
-        if last_ct.loc[end_column] > minute:
-            if min_idx < len(minutes_list) - 1:
-                ppm_df.at[minutes_list[min_idx + 1], 'ppm_strict'] = 1
-                ppm_df.at[minutes_list[min_idx + 1], 'ppm_relaxed'] = 1
-        # In case there is any click train starting at that specific minute, add it as ppm
-        ppm_df.at[minute, 'ppm_strict'] = (all_min_clicks[class_column] == hq).any() or ppm_df.loc[minute, 'ppm_strict']
-        ppm_df.at[minute, 'ppm_relaxed'] = (((all_min_clicks[class_column] == hq) |
-                                             (all_min_clicks[class_column] == lq)).any()) or ppm_df.loc[
-                                               minute, 'ppm_strict']
+    possible_minutes = df.minutes_ppm.unique()
+    # Iterate through all the minutes of the ppm dataframe
+    for min_idx, minute in enumerate(ppm_df.index):
+        if minute in possible_minutes:
+            # Something is happening in this minute!
+            all_min_clicks = df.loc[df['minutes_ppm'] == minute]
+            if len(all_min_clicks) > 0:
+                # In case there is any click train starting at that specific minute, add it as ppm
+                ppm_df.loc[minute, 'ppm_strict'] = (all_min_clicks[class_column] == hq).any() or ppm_df.loc[minute,
+                                                                                                            'ppm_strict']
+                ppm_df.loc[minute, 'ppm_relaxed'] = (((all_min_clicks[class_column]
+                                                      == hq) | (all_min_clicks[class_column] == lq)).any()) \
+                                                      or ppm_df.loc[minute, 'ppm_strict']
+
+                # If the last CT of the minute lasts to the next minutes, add all the next minutes as ppm
+                last_ct = all_min_clicks.iloc[-1]
+                next_min_idx = min_idx + 1
+                while (next_min_idx < len(ppm_df) - 1) and (last_ct.loc[end_column] > ppm_df.iloc[next_min_idx].name):
+                    next_min = ppm_df.iloc[next_min_idx].name
+                    if last_ct[class_column] == lq:
+                        ppm_df.loc[next_min, 'ppm_relaxed'] = True
+                    elif last_ct[class_column] == hq:
+                        ppm_df.loc[next_min, 'ppm_strict'] = True
+                        ppm_df.loc[next_min, 'ppm_relaxed'] = True
+                    next_min_idx += 1
+
     return ppm_df.astype(int)
 
 
@@ -48,8 +59,9 @@ def add_end_ct(df, df_info):
     df['EndCT'] = None
     for idx, row in df.iterrows():
         info_ct = df_info.loc[df_info['CT'] == row.loc['CTNum']]
-        df['EndCT'] = info_ct.iloc[-1]['datetime']
+        df.loc[idx, 'EndCT'] = info_ct.iloc[-1]['datetime']
 
+    df['EndCT'] = pd.to_datetime(df['EndCT'])
     return df
 
 
@@ -88,8 +100,8 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
     end_minutes_idxs = AllCTInfo.EndCT.dt.round('min')
     for i, row in validation_minutes.iterrows():
         if row.loc['validation'] == 1:
-            AllCTInfo.loc[minutes_idxs == i, 'Validation'] = 1
-            AllCTInfo.loc[end_minutes_idxs == i, 'Validation'] = 1
+            mask = (minutes_idxs <= i) & (end_minutes_idxs <= i)
+            AllCTInfo.loc[mask, 'Validation'] = 1
 
     return validation_minutes, AllCTInfo[AllCTInfo.Validation == 1]
 

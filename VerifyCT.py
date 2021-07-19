@@ -646,12 +646,12 @@ class Ui_MainWindow(object):
         SelectedFolder = pathlib.Path(self.SelectedFolder)
         FilesInFolder = SelectedFolder.glob("*")
         FileName = SelectedFolder.joinpath('AllClicks.csv')
+        VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
         if FileName in list(FilesInFolder):
             CP = pd.read_csv(FileName)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             CTInfo = pd.read_csv(CTInfoFileName)
             CP = CP.merge(CTInfo[['CTNum', 'NewCT']], left_on='CT', right_on='CTNum')
-            VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
             VerifyCT = pd.read_csv(VerifyFileName)
             row = VerifyCT[VerifyCT.Verified == 0].index[0]
             ct_num = VerifyCT.NewCT[row]
@@ -698,16 +698,15 @@ class Ui_MainWindow(object):
             AllClicks.to_csv(CTFileName, index=False)
             CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
             AllCTInfo.to_csv(CTInfoFileName, index=False)
-            VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
             if self.cpod.isChecked():
                 # If the cpod checkbox is checked then check for the CPOD.txt file
                 CPODFileName = SelectedFolder.joinpath('CPOD.txt')
                 validation_minutes, VerifyCT = comparison_CPOD.select_validation(CTInfoFileName, CTFileName, CPODFileName)
-                validation_minutes.to_csv('VerifyCT_cpod.csv')
+                validation_minutes.to_csv(SelectedFolder.joinpath('VerifyCT_cpod.csv'))
             else:
                 VerifyCT = AllCTInfo
                 VerifyCT['Verified'] = 0
-            VerifyCT.to_csv(VerifyFileName)
+            VerifyCT.to_csv(VerifyFileName, index=False)
             row = VerifyCT[VerifyCT.Verified == 0].index[0]
             ct_num = VerifyCT.NewCT[row]
             CTInfo = AllCTInfo
