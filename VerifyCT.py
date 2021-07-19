@@ -645,12 +645,14 @@ class Ui_MainWindow(object):
         self.browse_button.setEnabled(False)
         SelectedFolder = pathlib.Path(self.SelectedFolder)
         FilesInFolder = SelectedFolder.glob("*")
-        FileName = SelectedFolder.joinpath('AllClicks.csv')
+        # Define the names of the files
+        AllClicksFileName = SelectedFolder.joinpath('AllClicks.csv')
         VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
-        if FileName in list(FilesInFolder):
-            CP = pd.read_csv(FileName)
-            CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
-            CTInfo = pd.read_csv(CTInfoFileName)
+        AllCTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
+
+        if AllClicksFileName in list(FilesInFolder):
+            CP = pd.read_csv(AllClicksFileName)
+            CTInfo = pd.read_csv(AllCTInfoFileName)
             CP = CP.merge(CTInfo[['CTNum', 'NewCT']], left_on='CT', right_on='CTNum')
             VerifyCT = pd.read_csv(VerifyFileName)
             row = VerifyCT[VerifyCT.Verified == 0].index[0]
@@ -694,14 +696,14 @@ class Ui_MainWindow(object):
                         AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
                         AllClicks = AllClicks.append(Clicks, ignore_index=True)
 
-            CTFileName = SelectedFolder.joinpath('AllClicks.csv')
-            AllClicks.to_csv(CTFileName, index=False)
-            CTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
-            AllCTInfo.to_csv(CTInfoFileName, index=False)
+            AllClicks.to_csv(AllClicksFileName, index=False)
+            AllCTInfo.to_csv(AllCTInfoFileName, index=False)
             if self.cpod.isChecked():
                 # If the cpod checkbox is checked then check for the CPOD.txt file
                 CPODFileName = SelectedFolder.joinpath('CPOD.txt')
-                validation_minutes, VerifyCT = comparison_CPOD.select_validation(CTInfoFileName, CTFileName, CPODFileName)
+                validation_minutes, VerifyCT = comparison_CPOD.select_validation(AllCTInfoFileName,
+                                                                                 AllClicksFileName,
+                                                                                 CPODFileName)
                 validation_minutes.to_csv(SelectedFolder.joinpath('VerifyCT_cpod.csv'))
             else:
                 VerifyCT = AllCTInfo
