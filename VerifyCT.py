@@ -653,7 +653,8 @@ class Ui_MainWindow(object):
         if AllClicksFileName in list(FilesInFolder):
             CP = pd.read_csv(AllClicksFileName)
             CTInfo = pd.read_csv(AllCTInfoFileName)
-            CP = CP.merge(CTInfo[['CTNum', 'NewCT']], left_on='CT', right_on='CTNum')
+            if 'NewCT' not in CP.columns:
+                CP['NewCT'] = CP.CT
             VerifyCT = pd.read_csv(VerifyFileName)
             row = VerifyCT[VerifyCT.Verified == 0].index[0]
             ct_num = VerifyCT.NewCT[row]
@@ -713,7 +714,8 @@ class Ui_MainWindow(object):
             ct_num = VerifyCT.NewCT[row]
             CTInfo = AllCTInfo
             CP = AllClicks
-            CP = CP.merge(CTInfo[['CTNum', 'NewCT']], left_on='CT', right_on='CTNum')
+            if 'NewCT' not in CP.columns:
+                CP['NewCT'] = CP.CT
             self.update_ct(ct_num, CP, CTInfo, VerifyCT)
             print('The data is ready to be validated')
 

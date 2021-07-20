@@ -58,7 +58,7 @@ def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq):
 def add_end_ct(df, df_info):
     df['EndCT'] = None
     for idx, row in df.iterrows():
-        info_ct = df_info.loc[df_info['CT'] == row.loc['CTNum']]
+        info_ct = df_info.loc[df_info['CT'] == row.loc['NewCT']]
         df.loc[idx, 'EndCT'] = info_ct.iloc[-1]['datetime']
 
     df['EndCT'] = pd.to_datetime(df['EndCT'])
