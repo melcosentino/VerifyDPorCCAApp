@@ -662,7 +662,6 @@ class Ui_MainWindow(object):
         else:
             AllCTInfo = pd.DataFrame()
             AllClicks = pd.DataFrame()
-            NewCTNum = 0
             FilesAndFolders = SelectedFolder.glob("*")
             Folders = [s for s in FilesAndFolders if s.is_dir()]
             if len(Folders) == 0:
@@ -674,6 +673,7 @@ class Ui_MainWindow(object):
                 AllCTInfo['Corr'] = 1
 
             else:
+                NewCTNum = 0
                 for SubFolder in Folders:
                     print('Processing subfolder', SubFolder)
                     ThisCP = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('Clicks.csv'))
@@ -686,12 +686,12 @@ class Ui_MainWindow(object):
                         for i in range(0, len(CTInfo)):
                             NewCTNum = NewCTNum + 1
                             NumCT = CTInfo.CTNum[i]
-                            CTInfo.NewCT[i] = NewCTNum
+                            CTInfo.NewCT.iloc[i] = NewCTNum
                             CTInfo['Corr'] = 1
-                            CTTemp = ThisCP[ThisCP.CT == NumCT]
-                            CTTemp.reset_index(inplace=True, drop=True)
-                            CTTemp['NewCT'] = NewCTNum
-                            Clicks = Clicks.append(CTTemp, ignore_index=True)
+                            CPTemp = ThisCP[ThisCP.CT == NumCT]
+                            CPTemp.reset_index(inplace=True, drop=True)
+                            CPTemp['NewCT'] = NewCTNum
+                            Clicks = Clicks.append(CPTemp, ignore_index=True)
                         AllCTInfo.reset_index(inplace=True, drop=True)
                         AllClicks.reset_index(inplace=True, drop=True)
                         AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
