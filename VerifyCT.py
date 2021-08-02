@@ -653,8 +653,6 @@ class Ui_MainWindow(object):
         if AllClicksFileName in list(FilesInFolder):
             CP = pd.read_csv(AllClicksFileName)
             CTInfo = pd.read_csv(AllCTInfoFileName)
-            if 'NewCT' not in CP.columns:
-                CP['NewCT'] = CP.CT
             VerifyCT = pd.read_csv(VerifyFileName)
             row = VerifyCT[VerifyCT.Verified == 0].index[0]
             ct_num = VerifyCT.NewCT[row]
@@ -665,37 +663,30 @@ class Ui_MainWindow(object):
             FilesAndFolders = SelectedFolder.glob("*")
             Folders = [s for s in FilesAndFolders if s.is_dir()]
             if len(Folders) == 0:
-                AllClicks = pd.read_csv(SelectedFolder.joinpath('Clicks.csv'))
-                AllCTInfo = pd.read_csv(SelectedFolder.joinpath('CTInfo.csv'))
-                AllCTInfo = AllCTInfo[AllCTInfo.CTType != 'Noise']
-                AllCTInfo.reset_index(inplace=True, drop=True)
-                AllCTInfo['NewCT'] = AllCTInfo.CTNum
-                AllCTInfo['Corr'] = 1
-
-            else:
-                NewCTNum = 0
-                for SubFolder in Folders:
-                    print('Processing subfolder', SubFolder)
-                    ThisCP = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('Clicks.csv'))
-                    ThisCTInfo = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('CTInfo.csv'))
-                    CTInfo = ThisCTInfo[ThisCTInfo.CTType != 'Noise']
-                    CTInfo.reset_index(inplace=True, drop=True)
-                    CTInfo['NewCT'] = 0
-                    if len(CTInfo) > 0:
-                        Clicks = pd.DataFrame()
-                        for i in range(0, len(CTInfo)):
-                            NewCTNum = NewCTNum + 1
-                            NumCT = CTInfo.CTNum[i]
-                            CTInfo.NewCT.iloc[i] = NewCTNum
-                            CTInfo['Corr'] = 1
-                            CPTemp = ThisCP[ThisCP.CT == NumCT]
-                            CPTemp.reset_index(inplace=True, drop=True)
-                            CPTemp['NewCT'] = NewCTNum
-                            Clicks = Clicks.append(CPTemp, ignore_index=True)
-                        AllCTInfo.reset_index(inplace=True, drop=True)
-                        AllClicks.reset_index(inplace=True, drop=True)
-                        AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
-                        AllClicks = AllClicks.append(Clicks, ignore_index=True)
+                Folders = [SelectedFolder]
+            NewCTNum = 0
+            for SubFolder in Folders:
+                print('Processing subfolder', SubFolder)
+                ThisCP = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('Clicks.csv'))
+                ThisCTInfo = pd.read_csv(SelectedFolder.joinpath(SubFolder).joinpath('CTInfo.csv'))
+                CTInfo = ThisCTInfo[ThisCTInfo.CTType != 'Noise']
+                CTInfo.reset_index(inplace=True, drop=True)
+                CTInfo['NewCT'] = 0
+                if len(CTInfo) > 0:
+                    Clicks = pd.DataFrame()
+                    for i in range(0, len(CTInfo)):
+                        NewCTNum = NewCTNum + 1
+                        NumCT = CTInfo.CTNum[i]
+                        CTInfo.NewCT.iloc[i] = NewCTNum
+                        CTInfo['Corr'] = 1
+                        CPTemp = ThisCP[ThisCP.CT == NumCT]
+                        CPTemp.reset_index(inplace=True, drop=True)
+                        CPTemp['NewCT'] = NewCTNum
+                        Clicks = Clicks.append(CPTemp, ignore_index=True)
+                    AllCTInfo.reset_index(inplace=True, drop=True)
+                    AllClicks.reset_index(inplace=True, drop=True)
+                    AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
+                    AllClicks = AllClicks.append(Clicks, ignore_index=True)
 
             AllClicks.to_csv(AllClicksFileName, index=False)
             AllCTInfo.to_csv(AllCTInfoFileName, index=False)
