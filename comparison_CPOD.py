@@ -1,4 +1,5 @@
 import pandas as pd
+import datetime
 
 
 def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq):
@@ -19,40 +20,33 @@ def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq):
     :return: DataFrame with all the minutes and True of False depending if it is positive porpoise minute (PPM)
     """
     df['minutes_ppm'] = df[date_column]
-    df['minutes_ppm'] = df['minutes_ppm'].dt.round('min')
-    start_minute = df['minutes_ppm'].min()
-    end_minute = df['minutes_ppm'].max()
+    df['minutes_ppm'] = df['minutes_ppm'].dt.floor('min')
+    df_strict = df[df[class_column] == hq][['minutes_ppm', end_column]]
+    df_relaxed = df[(df[class_column] == lq) | (df[class_column] == hq)][['minutes_ppm', end_column]]
+    df_strict = add_middle_minutes(df_strict, end_column)
+    df_relaxed = add_middle_minutes(df_relaxed, end_column)
+
+    start_minute = min(df_strict['minutes_ppm'].min(), df_relaxed['minutes_ppm'].min())
+    end_minute = max(df_strict['minutes_ppm'].max(), df_relaxed['minutes_ppm'].max())
     minutes_idxs = pd.date_range(start_minute, end_minute, freq='1min')
     ppm_df = pd.DataFrame(columns=['ppm_strict', 'ppm_relaxed'], index=minutes_idxs)
     ppm_df['ppm_strict'] = 0
     ppm_df['ppm_relaxed'] = 0
-    possible_minutes = df.minutes_ppm.unique()
-    # Iterate through all the minutes of the ppm dataframe
-    for min_idx, minute in enumerate(ppm_df.index):
-        if minute in possible_minutes:
-            # Something is happening in this minute!
-            all_min_clicks = df.loc[df['minutes_ppm'] == minute]
-            if len(all_min_clicks) > 0:
-                # In case there is any click train starting at that specific minute, add it as ppm
-                ppm_df.loc[minute, 'ppm_strict'] = (all_min_clicks[class_column] == hq).any() or ppm_df.loc[minute,
-                                                                                                            'ppm_strict']
-                ppm_df.loc[minute, 'ppm_relaxed'] = (((all_min_clicks[class_column]
-                                                      == hq) | (all_min_clicks[class_column] == lq)).any()) \
-                                                      or ppm_df.loc[minute, 'ppm_strict']
-
-                # If the last CT of the minute lasts to the next minutes, add all the next minutes as ppm
-                last_ct = all_min_clicks.iloc[-1]
-                next_min_idx = min_idx + 1
-                while (next_min_idx < len(ppm_df) - 1) and (last_ct.loc[end_column] > ppm_df.iloc[next_min_idx].name):
-                    next_min = ppm_df.iloc[next_min_idx].name
-                    if last_ct[class_column] == lq:
-                        ppm_df.loc[next_min, 'ppm_relaxed'] = True
-                    elif last_ct[class_column] == hq:
-                        ppm_df.loc[next_min, 'ppm_strict'] = True
-                        ppm_df.loc[next_min, 'ppm_relaxed'] = True
-                    next_min_idx += 1
+    ppm_df.loc[df_strict.minutes_ppm.unique(), 'ppm_strict'] = 1
+    ppm_df.loc[df_relaxed.minutes_ppm.unique(), 'ppm_relaxed'] = 1
 
     return ppm_df.astype(int)
+
+
+def add_middle_minutes(df, end_column):
+    df.reset_index(inplace=True, drop=True)
+    for idx, minute_row in df.iterrows():
+        next_min = minute_row['minutes_ppm'] + datetime.timedelta(minutes=1)
+        while next_min <= minute_row[end_column]:
+            df.loc[len(df)] = [next_min, minute_row[end_column]]
+            next_min += datetime.timedelta(minutes=1)
+    df.sort_values('minutes_ppm', ignore_index=True)
+    return df
 
 
 def add_end_ct(df, df_info):
@@ -99,11 +93,13 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
 
     AllCTInfo['Verified'] = 0
     AllCTInfo['Validation'] = 0
-    minutes_idxs = AllCTInfo.Date.dt.round('min')
-    end_minutes_idxs = AllCTInfo.EndCT.dt.round('min')
     for i, row in validation_minutes.iterrows():
         if row.loc['validation'] == 1:
-            mask = (minutes_idxs <= i) & (end_minutes_idxs <= i)
+            next_min = i + datetime.timedelta(minutes=1)
+            mask_start = (AllCTInfo.Date >= i) & (AllCTInfo.Date <= next_min)    # CT that start in the minute
+            mask_end = (AllCTInfo.EndCT >= i) & (AllCTInfo.EndCT <= next_min)    # CT which end in the minute
+            mask_during = (AllCTInfo.Date <= i) & (AllCTInfo.EndCT >= next_min)  # CT that start before and end after
+            mask = mask_start | mask_end | mask_during
             AllCTInfo.loc[mask, 'Validation'] = 1
 
     return validation_minutes, AllCTInfo[AllCTInfo.Validation == 1]

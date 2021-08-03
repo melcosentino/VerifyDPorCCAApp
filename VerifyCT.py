@@ -654,9 +654,6 @@ class Ui_MainWindow(object):
             CP = pd.read_csv(AllClicksFileName)
             CTInfo = pd.read_csv(AllCTInfoFileName)
             VerifyCT = pd.read_csv(VerifyFileName)
-            row = VerifyCT[VerifyCT.Verified == 0].index[0]
-            ct_num = VerifyCT.NewCT[row]
-            self.update_ct(ct_num, CP, CTInfo, VerifyCT)
         else:
             AllCTInfo = pd.DataFrame()
             AllClicks = pd.DataFrame()
@@ -701,14 +698,22 @@ class Ui_MainWindow(object):
                 VerifyCT = AllCTInfo
                 VerifyCT['Verified'] = 0
             VerifyCT.to_csv(VerifyFileName, index=False)
-            row = VerifyCT[VerifyCT.Verified == 0].index[0]
-            ct_num = VerifyCT.NewCT[row]
             CTInfo = AllCTInfo
             CP = AllClicks
-            if 'NewCT' not in CP.columns:
-                CP['NewCT'] = CP.CT
-            self.update_ct(ct_num, CP, CTInfo, VerifyCT)
             print('The data is ready to be validated')
+
+        # Load the first Click Train
+        row = VerifyCT[VerifyCT.Verified == 0].index[0]
+
+        #TO DELETE
+        # old_verify2 = pd.read_csv(SelectedFolder.parent.joinpath('VerifyCT_oldold.csv'))
+        old_verify = pd.read_csv(SelectedFolder.joinpath('VerifyCT_old.csv'))
+        new_verify = VerifyCT[~VerifyCT.CTNum.isin(old_verify.CTNum)]
+        new_verify.to_csv(SelectedFolder.joinpath('New_to_validate.csv'))
+        print('CTNum', len(new_verify))
+
+        ct_num = VerifyCT.NewCT[row]
+        self.update_ct(ct_num, CP, CTInfo, VerifyCT)
 
     def save_updates(self):
         """
