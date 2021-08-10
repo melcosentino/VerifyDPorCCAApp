@@ -704,14 +704,6 @@ class Ui_MainWindow(object):
 
         # Load the first Click Train
         row = VerifyCT[VerifyCT.Verified == 0].index[0]
-
-        #TO DELETE
-        # old_verify2 = pd.read_csv(SelectedFolder.parent.joinpath('VerifyCT_oldold.csv'))
-        old_verify = pd.read_csv(SelectedFolder.joinpath('VerifyCT_old.csv'))
-        new_verify = VerifyCT[~VerifyCT.CTNum.isin(old_verify.CTNum)]
-        new_verify.to_csv(SelectedFolder.joinpath('New_to_validate.csv'))
-        print('CTNum', len(new_verify))
-
         ct_num = VerifyCT.NewCT[row]
         self.update_ct(ct_num, CP, CTInfo, VerifyCT)
 
