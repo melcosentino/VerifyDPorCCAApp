@@ -650,6 +650,8 @@ class Ui_MainWindow(object):
         VerifyFileName = SelectedFolder.joinpath('VerifyCT.csv')
         AllCTInfoFileName = SelectedFolder.joinpath('AllCTInfo.csv')
 
+        # Check if the files AllClicks, VerifyCT and AllCTInfo already exist. If they don't, generate them.
+        # If they do, load them
         if AllClicksFileName in list(FilesInFolder):
             CP = pd.read_csv(AllClicksFileName)
             CTInfo = pd.read_csv(AllCTInfoFileName)
@@ -671,6 +673,9 @@ class Ui_MainWindow(object):
                 CTInfo['NewCT'] = 0
                 if len(CTInfo) > 0:
                     Clicks = pd.DataFrame()
+                    # Rename the CT (in NewCT) so numbers are not repeated!
+                    # Create AllCT with all the CT in the main folder
+                    # Create AllClicks with all the clicks in the main folder together
                     for i in range(0, len(CTInfo)):
                         NewCTNum = NewCTNum + 1
                         NumCT = CTInfo.CTNum[i]
@@ -680,6 +685,7 @@ class Ui_MainWindow(object):
                         CPTemp.reset_index(inplace=True, drop=True)
                         CPTemp['NewCT'] = NewCTNum
                         Clicks = Clicks.append(CPTemp, ignore_index=True)
+                    # Reset indexes of the dataframes
                     AllCTInfo.reset_index(inplace=True, drop=True)
                     AllClicks.reset_index(inplace=True, drop=True)
                     AllCTInfo = AllCTInfo.append(CTInfo, ignore_index=True)
@@ -704,14 +710,6 @@ class Ui_MainWindow(object):
 
         # Load the first Click Train
         row = VerifyCT[VerifyCT.Verified == 0].index[0]
-
-        #TO DELETE
-        # old_verify2 = pd.read_csv(SelectedFolder.parent.joinpath('VerifyCT_oldold.csv'))
-        old_verify = pd.read_csv(SelectedFolder.joinpath('VerifyCT_old.csv'))
-        new_verify = VerifyCT[~VerifyCT.CTNum.isin(old_verify.CTNum)]
-        new_verify.to_csv(SelectedFolder.joinpath('New_to_validate.csv'))
-        print('CTNum', len(new_verify))
-
         ct_num = VerifyCT.NewCT[row]
         self.update_ct(ct_num, CP, CTInfo, VerifyCT)
 

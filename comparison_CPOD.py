@@ -39,24 +39,37 @@ def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq):
 
 
 def add_middle_minutes(df, end_column):
+    """
+    Add to the data frame rows between the start and the end of every click train. (i.e. if a click train starts at
+    minute 1 and finishes at minute 3, add 2 as a row in the column minutes_ppm)
+    :param df: dataframe with all the click trains. It needs to include minutes_ppm as a column.
+    :param end_column: string. Name of the column where the end of the click train is (in datetime)
+    :return:
+    """
     df.reset_index(inplace=True, drop=True)
     for idx, minute_row in df.iterrows():
         next_min = minute_row['minutes_ppm'] + datetime.timedelta(minutes=1)
         while next_min <= minute_row[end_column]:
             df.loc[len(df)] = [next_min, minute_row[end_column]]
             next_min += datetime.timedelta(minutes=1)
-    df.sort_values('minutes_ppm', ignore_index=True)
+    df = df.sort_values('minutes_ppm', ignore_index=True)
     return df
 
 
 def add_end_ct(df, df_info):
+    """
+    Add a column to df with the timestamp of the last click of the click train
+    :param df: dataframe with click trains
+    :param df_info: dataframe with the clicks corresponding to the click trains
+    """
     df['EndCT'] = None
     for idx, row in df.iterrows():
         info_ct = df_info.loc[df_info['NewCT'] == row.loc['NewCT']]
         if len(info_ct) > 0:
             df.loc[idx, 'EndCT'] = info_ct.iloc[-1]['datetime']
         else:
-            print('hey problem')
+            print('This Clicks file does not contain the CT number %s. '
+                  'Please check if the clicks belong to the same project' % row.loc['NewCT'])
 
     df['EndCT'] = pd.to_datetime(df['EndCT'])
     return df
@@ -64,10 +77,12 @@ def add_end_ct(df, df_info):
 
 def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
     """
-    Create a
-    :param AllCTInfo_path:
-    :param CPOD_validated_path:
-    :return:
+    Select which CT of DPorCCA have to be validated.
+    :param CTInfo_path: Path to the file with all the Clicks present in the Click trains (AllClicks.csv)
+    :param CTrains_path: Path to the file with all the Click Trains information (AllCTInfo.csv)
+    :param CPOD_validated_path: Path to *.txt file with all the ClickTrains output from CPOD.exe
+    :return: validation_minutes, Verify. The first is a dataset with all the ppm of the two methods. Second one
+    is a list of all the CT that have to be validated
     """
     CTInfo = pd.read_csv(CTInfo_path, parse_dates=['Date'], infer_datetime_format=True)
     CTrains = pd.read_csv(CTrains_path, parse_dates=['datetime'], infer_datetime_format=True)
@@ -106,6 +121,12 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
 
 
 def compare_validated(validation, validated_CT, validated_CT_info):
+    """
+    Compare the output of both systems
+    :param validation:
+    :param validated_CT:
+    :param validated_CT_info:
+    """
     validated_CT['PorpoisePresence'] = 0
     validated_CT.loc[(validated_CT['Corr'] == 1) & (validated_CT['CTType'] == 'Noise'), 'PorpoisePresence'] = 0
     validated_CT.loc[(validated_CT['Corr'] == 1) & (validated_CT['CTType'] != 'Noise'), 'PorpoisePresence'] = 1
@@ -121,7 +142,6 @@ def compare_validated(validation, validated_CT, validated_CT_info):
 
 
 if __name__ == "__main__":
-
     CTInfo_path = 'CTInfo.csv'
     CTrains_path = 'CTrains.csv'
     CPOD_path = 'CPOD.txt'
