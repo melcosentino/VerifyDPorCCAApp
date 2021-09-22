@@ -123,6 +123,13 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.MainTab = QtWidgets.QTabWidget(self.centralwidget)
         self.DateLabel = QtWidgets.QLabel(self.DatePan)
+        self.SelectLabel = QtWidgets.QLabel(self.DisplaySettings)
+        self.FolderPathDet = QtWidgets.QLineEdit(self.DisplaySettings)
+        self.browse_button = QtWidgets.QPushButton(self.DisplaySettings)
+        self.cpod = QtWidgets.QCheckBox(self.DisplaySettings)
+        self.start_date = QtWidgets.QPlainTextEdit(self.DisplaySettings)
+        self.end_date = QtWidgets.QPlainTextEdit(self.DisplaySettings)
+        self.startdateLabel = QtWidgets.QLabel(self.DisplaySettings)
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -207,7 +214,7 @@ class Ui_MainWindow(object):
         self.VerText.setAlignment(QtCore.Qt.AlignCenter)
         self.VerText.setObjectName("VerText")
         # CT Info area
-        self.CTInfoPan.setGeometry(QtCore.QRect(485, 8, 300, 106))
+        self.CTInfoPan.setGeometry(QtCore.QRect(485, 8, 210, 106))
         self.CTInfoPan.setFrameShape(QtWidgets.QFrame.Box)
         self.CTInfoPan.setFrameShadow(QtWidgets.QFrame.Raised)
         self.CTInfoPan.setObjectName("CTInfoPan")
@@ -295,24 +302,24 @@ class Ui_MainWindow(object):
         self.WaveAxes.setObjectName("WaveAxes")
         self.SpectAxes.setGeometry(QtCore.QRect(10, 400, 600, 300))
         self.SpectAxes.setObjectName("SpectAxes")
-
         # Browse button
-        self.SelectLabel = QtWidgets.QLabel(self.DisplaySettings)
-        self.SelectLabel.setGeometry(840, 8, 150, 20)
+        self.SelectLabel.setGeometry(750, 8, 130, 20)
         self.SelectLabel.setText('Select a folder')
-        self.FolderPathDet = QtWidgets.QLineEdit(self.DisplaySettings)
-        self.FolderPathDet.setGeometry(840, 40, 320, 30)
+        self.FolderPathDet.setGeometry(750, 35, 300, 30)
         self.FolderPathDet.setText("C:/")
-        # Browse button
-        self.browse_button = QtWidgets.QPushButton(self.DisplaySettings)
-        self.browse_button.setGeometry(1060, 82, 100, 30)
+        # button
+        self.browse_button.setGeometry(1060, 35, 100, 30)
         self.browse_button.setText("Browse")
         self.browse_button.clicked.connect(self.click_browse_button)
         # CPOD txt output
-        self.cpod = QtWidgets.QCheckBox(self.DisplaySettings)
-        self.cpod.setGeometry(850, 82, 200, 30)
-        self.cpod.setText('Compare with CPOD')
+        self.cpod.setGeometry(900, 5, 200, 30)
+        self.cpod.setText('Compare CPOD')
         self.cpod.setChecked(False)
+        # CPOD start and end date
+        self.start_date.setGeometry(750, 82, 200, 30)
+        self.startdateLabel.setGeometry(750, 65, 300, 30)
+        self.startdateLabel.setText('Start and end date in yyyy-mm-dd HH:MM')
+        self.end_date.setGeometry(960, 82, 200, 30)
         # Upload data
         self.upload_val_data.setGeometry(QtCore.QRect(1165, 8, 100, 106))
         font = QtGui.QFont()
@@ -321,7 +328,7 @@ class Ui_MainWindow(object):
         self.upload_val_data.setFont(font)
         self.upload_val_data.setObjectName("upload_val_data")
         self.upload_val_data.clicked.connect(self.upload_data)
-        self.wrong_button.setGeometry(QtCore.QRect(790, 8, 40, 48))
+        self.wrong_button.setGeometry(QtCore.QRect(700, 8, 40, 48))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
@@ -330,7 +337,7 @@ class Ui_MainWindow(object):
         self.wrong_button.setObjectName("wrong_button")
         self.wrong_button.clicked.connect(self.put_wrong)
 
-        self.right_button.setGeometry(QtCore.QRect(790, 65, 40, 48))
+        self.right_button.setGeometry(QtCore.QRect(700, 65, 40, 48))
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
@@ -359,7 +366,7 @@ class Ui_MainWindow(object):
                                            "(Total)</span></p></body></html>"))
         self.CTForw.setText(_translate("MainWindow", ">"))
         self.CTBack.setText(_translate("MainWindow", "<"))
-        self.TotalLabel.setText(_translate("MainWindow", "()"))
+        self.TotalLabel.setText(_translate("MainWindow", ""))
         self.CorrLabel.setText(_translate("MainWindow",
                                           "<html><head/><body><p><span style=\" "
                                           "font-weight:600\">Correct</span></p></body></html>"))
@@ -694,11 +701,21 @@ class Ui_MainWindow(object):
             AllClicks.to_csv(AllClicksFileName, index=False)
             AllCTInfo.to_csv(AllCTInfoFileName, index=False)
             if self.cpod.isChecked():
+                if self.start_date.toPlainText() == '':
+                    start_date = None
+                else:
+                    start_date = self.start_date.toPlainText()
+                if self.end_date.toPlainText() == '':
+                    end_date = None
+                else:
+                    end_date = self.end_date.toPlainText()
                 # If the cpod checkbox is checked then check for the CPOD.txt file
                 CPODFileName = SelectedFolder.joinpath('CPOD.txt')
                 validation_minutes, VerifyCT = comparison_CPOD.select_validation(AllCTInfoFileName,
                                                                                  AllClicksFileName,
-                                                                                 CPODFileName)
+                                                                                 CPODFileName,
+                                                                                 start_date=start_date,
+                                                                                 end_date=end_date)
                 validation_minutes.to_csv(SelectedFolder.joinpath('VerifyCT_cpod.csv'))
             else:
                 VerifyCT = AllCTInfo

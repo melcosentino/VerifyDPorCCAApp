@@ -2,7 +2,7 @@ import pandas as pd
 import datetime
 
 
-def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq):
+def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq, start_minute=None, end_minute=None):
     """
     Returns the number of click trains per minute
     :param df: DataFrame
@@ -26,8 +26,10 @@ def positive_porpoise_minute(df, date_column, class_column, end_column, hq, lq):
     df_strict = add_middle_minutes(df_strict, end_column)
     df_relaxed = add_middle_minutes(df_relaxed, end_column)
 
-    start_minute = min(df_strict['minutes_ppm'].min(), df_relaxed['minutes_ppm'].min())
-    end_minute = max(df_strict['minutes_ppm'].max(), df_relaxed['minutes_ppm'].max())
+    if start_minute is None:
+        start_minute = min(df_strict['minutes_ppm'].min(), df_relaxed['minutes_ppm'].min())
+    if end_minute is None:
+        end_minute = max(df_strict['minutes_ppm'].max(), df_relaxed['minutes_ppm'].max())
     minutes_idxs = pd.date_range(start_minute, end_minute, freq='1min')
     ppm_df = pd.DataFrame(columns=['ppm_strict', 'ppm_relaxed'], index=minutes_idxs)
     ppm_df['ppm_strict'] = 0
@@ -75,7 +77,7 @@ def add_end_ct(df, df_info):
     return df
 
 
-def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
+def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path, start_date=None, end_date=None):
     """
     Select which CT of DPorCCA have to be validated.
     :param CTInfo_path: Path to the file with all the Clicks present in the Click trains (AllClicks.csv)
@@ -84,11 +86,16 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
     :return: validation_minutes, Verify. The first is a dataset with all the ppm of the two methods. Second one
     is a list of all the CT that have to be validated
     """
+    if type(start_date) == str:
+        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d %H:%M')
+    if type(end_date) == str:
+        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d %H:%M')
     CTInfo = pd.read_csv(CTInfo_path, parse_dates=['Date'], infer_datetime_format=True)
     CTrains = pd.read_csv(CTrains_path, parse_dates=['datetime'], infer_datetime_format=True)
     AllCTInfo = add_end_ct(CTInfo, CTrains)
     DPorCCA_ppm = positive_porpoise_minute(AllCTInfo, class_column='CTType', end_column='EndCT',
-                                           date_column='Date', hq='NBHF', lq='LQ-NBHF')
+                                           date_column='Date', hq='NBHF', lq='LQ-NBHF',
+                                           start_minute=start_date, end_minute=end_date)
 
     # FROM CPOD TO COMPARISON TABLE
     CPOD_validated = pd.read_table(CPOD_validated_path, parse_dates=['Time'], infer_datetime_format=True, dayfirst=True)
@@ -97,20 +104,33 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path):
         ((CPOD_validated['TrClass'] == "High") | (CPOD_validated['TrClass'] == 'Mod')), 'CTType'] = 'NBHF'
     CPOD_validated['EndTr'] = pd.to_timedelta(CPOD_validated['TrDur_us'], 'us') + CPOD_validated['Time']
     CPOD_ppm = positive_porpoise_minute(CPOD_validated, class_column='CTType', date_column='Time',
-                                        end_column='EndTr', hq='NBHF', lq='LQ-NBHF')
+                                        end_column='EndTr', hq='NBHF', lq='LQ-NBHF',
+                                        start_minute=start_date, end_minute=end_date)
 
     validation_minutes = DPorCCA_ppm.merge(CPOD_ppm, suffixes=['_DPorCCA', '_CPOD'], left_index=True, right_index=True)
+
+    # Assume all the DPorCCA CT have to be validated
     validation_minutes['validation'] = 1
-    validation_minutes.loc[(validation_minutes['ppm_strict_DPorCCA'] == 1) &
-                           (validation_minutes['ppm_strict_CPOD'] == 1), 'validation'] = 0
-    validation_minutes.loc[(validation_minutes['ppm_relaxed_DPorCCA'] == 0) &
-                           (validation_minutes['ppm_relaxed_CPOD'] == 0), 'validation'] = 0
+    validation_minutes.loc[(validation_minutes['ppm_relaxed_DPorCCA'] == 0, 'validation')] = 0
+
+    # Check all the minutes that are positive in a 3-min window in validated cpod
+    # Assume these ones are then already validated
+    for i, row in validation_minutes.iterrows():
+        if row.loc['validation'] == 1:
+            # For each positive minute, check the minute and the previous and the following in CPOD.
+            # because they are all validated we only look at relaxed criteria
+            i_start = i - datetime.timedelta(minutes=1)
+            i_end = i + datetime.timedelta(minutes=1)
+            cpod_3min_window = validation_minutes.loc[i_start:i_end]
+            # If the 3-min window is at some point positive, that minute does not have to be validated
+            if cpod_3min_window['ppm_relaxed_CPOD'].sum() > 0:
+                validation_minutes.loc[i, 'validation'] = 0
 
     AllCTInfo['Verified'] = 0
     AllCTInfo['Validation'] = 0
     for i, row in validation_minutes.iterrows():
         if row.loc['validation'] == 1:
-            next_min = i + datetime.timedelta(minutes=1)
+            next_min = i + datetime.timedelta(minutes=2)
             mask_start = (AllCTInfo.Date >= i) & (AllCTInfo.Date <= next_min)    # CT that start in the minute
             mask_end = (AllCTInfo.EndCT >= i) & (AllCTInfo.EndCT <= next_min)    # CT which end in the minute
             mask_during = (AllCTInfo.Date <= i) & (AllCTInfo.EndCT >= next_min)  # CT that start before and end after
