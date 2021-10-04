@@ -65,13 +65,12 @@ def add_end_ct(df, df_info):
     :param df_info: dataframe with the clicks corresponding to the click trains
     """
     df['EndCT'] = None
-    for idx, row in df.iterrows():
-        info_ct = df_info.loc[df_info['NewCT'] == row.loc['NewCT']]
-        if len(info_ct) > 0:
-            df.loc[idx, 'EndCT'] = info_ct.iloc[-1]['datetime']
-        else:
+    for new_ct, info_ct in df_info.groupby('NewCT'):
+        try:
+            df.loc[df['NewCT'] == new_ct, 'EndCT'] = info_ct.iloc[-1]['datetime']
+        except IndexError:
             print('This Clicks file does not contain the CT number %s. '
-                  'Please check if the clicks belong to the same project' % row.loc['NewCT'])
+                  'Please check if the clicks belong to the same project' % new_ct)
 
     df['EndCT'] = pd.to_datetime(df['EndCT'])
     return df
