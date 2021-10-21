@@ -573,38 +573,20 @@ class Ui_MainWindow(object):
         if '.zip' in str(WavFileToOpen):
             zip_file = zipfile.ZipFile(WavFileToOpen.parent)
             WavFileToOpen = zip_file.open(WavFileToOpen.name)
-        s = soundfile.SoundFile(WavFileToOpen)
-        TotSamples = s.frames
         Start = CTTemp.start_sample.iloc[0] - SAMPLES_SPECTROGRAM
         End = CTTemp.start_sample.iloc[-1] + SAMPLES_SPECTROGRAM
-        if End > TotSamples:
-            End = TotSamples
-        if Start < 0:
-            Start = 0
 
         # Prepare the signal and compute the spectrogram
-        ctsig = ct_signal.CTSignal(s, Start, End)
+        ctsig = ct_signal.CTSignal(WavFileToOpen, Start, End)
         ctsig.prepare_signal()
-        sxx = ctsig.spectrogram(nfft=NFFT, scaling='density', mode='Fast', db=True, force_calc=True)
-
-        # Plot the graphs
-        # self.WaveAxes.plot(ctsig.t, ctsig.filtered_signal)
-        # plt_item = pg.PColorMeshItem(sxx.T)
-        # self.SpectAxes.addItem(plt_item)
-
-        # self.ActionPan, (self.WaveAxes, self.SpectAxes) = plt.subplots(nrows=2, sharex=True)
-        # Pxx, freqs, bins, im = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
-        # self.SpectAxes = plt.specgram(self.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=128, cmap='jet')
-        # #plt.show()
+        freqs, time, sxx = ctsig.spectrogram(nfft=NFFT, db=True, noverlap=Overlap)
 
         fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
         ax1.plot(ctsig.t, ctsig.filtered_signal)
-        Pxx, freqs, bins, im = ax2.specgram(ctsig.filtered_signal, NFFT=NFFT, Fs=self.fs, noverlap=Overlap)
-        # The `specgram` method returns 4 objects. They are:
-        # - Pxx: the periodogram
-        # - freqs: the frequency vector
-        # - bins: the centers of the time bins
-        # - im: the .image.AxesImage instance representing the data in the plot
+        ax2.pcolormesh(time, freqs, sxx, shading='auto', cmap='viridis')
+        ax2.set_title('Spectrogram')
+        ax2.set_xlabel('Time [s]')
+        ax2.set_ylabel('Frequency [Hz]')
         plt.show()
 
     def FromOrdinal(self, x):
