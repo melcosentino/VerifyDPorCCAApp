@@ -36,7 +36,6 @@ Creates pop up windows
 
 # Fixed parameters
 NFFT = 512
-SAMPLES_SPECTROGRAM = 5760
 Overlap = 128
 
 
@@ -568,26 +567,10 @@ class Ui_MainWindow(object):
         self.WaveAxes.clear()
         self.SpectAxes.clear()
 
-        # Find the file to open and get the part of the click train
-        WavFileToOpen = pathlib.Path(CTTemp.filename[0])
-        if '.zip' in str(WavFileToOpen):
-            zip_file = zipfile.ZipFile(WavFileToOpen.parent)
-            WavFileToOpen = zip_file.open(WavFileToOpen.name)
-        Start = CTTemp.start_sample.iloc[0] - SAMPLES_SPECTROGRAM
-        End = CTTemp.start_sample.iloc[-1] + SAMPLES_SPECTROGRAM
-
         # Prepare the signal and compute the spectrogram
-        ctsig = ct_signal.CTSignal(WavFileToOpen, Start, End)
+        ctsig = ct_signal.CTSignal(CTTemp)
         ctsig.prepare_signal()
-        freqs, time, sxx = ctsig.spectrogram(nfft=NFFT, db=True, noverlap=Overlap)
-
-        fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
-        ax1.plot(ctsig.t, ctsig.filtered_signal)
-        ax2.pcolormesh(time, freqs, sxx, shading='auto', cmap='viridis')
-        ax2.set_title('Spectrogram')
-        ax2.set_xlabel('Time [s]')
-        ax2.set_ylabel('Frequency [Hz]')
-        plt.show()
+        ctsig.plot_spectroram(nfft=NFFT, db=True, noverlap=Overlap)
 
     def FromOrdinal(self, x):
         ix = int(x)
