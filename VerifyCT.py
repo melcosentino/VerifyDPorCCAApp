@@ -570,7 +570,7 @@ class Ui_MainWindow(object):
         # Prepare the signal and compute the spectrogram
         ctsig = ct_signal.CTSignal(CTTemp)
         ctsig.prepare_signal()
-        ctsig.plot_spectroram(nfft=NFFT, db=True, noverlap=Overlap)
+        ctsig.plot_spectrogram(nfft=NFFT, db=True, noverlap=Overlap)
 
     def FromOrdinal(self, x):
         ix = int(x)

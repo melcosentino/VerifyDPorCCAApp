@@ -8,8 +8,8 @@ import datetime
 import pandas as pd
 
 
-LOW_FREQ = 10
-HIGH_FREQ = 200000
+LOW_FREQ = 120000
+HIGH_FREQ = 150000
 FILTER_ORDER = 4
 P_REF = 1.0
 SAMPLES_SPECTROGRAM = 5760
@@ -89,7 +89,7 @@ class CTSignal:
             sxx = 10 * np.log10(sxx / P_REF ** 2)
         return freqs, time, sxx
 
-    def plot_spectroram(self, nfft=512, db=True, noverlap=0):
+    def plot_spectrogram(self, nfft=512, db=True, noverlap=0):
         freqs, time, sxx = self.spectrogram(nfft, db, noverlap)
         fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
         ax1.plot(self.t, self.filtered_signal)
