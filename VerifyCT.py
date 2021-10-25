@@ -453,8 +453,7 @@ class Ui_MainWindow(object):
         global CTTemp
         CTTemp = CP[CP.NewCT == num_ct]
         CTTemp.reset_index(inplace=True)
-        self.fs = 1 / (
-                CTTemp.iloc[3]['ICI'] / (1000 * (CTTemp.iloc[3]["start_sample"] - CTTemp.iloc[2]["start_sample"])))
+        self.fs = CTTemp.duration_samples.iloc[0] / (CTTemp.duration_us.iloc[0] / 1e6)
         CTTemp = self.NewICI(CTTemp)
         CTTemp.loc[:, 'SumMs'] = int(0)
         for i in range(1, len(CTTemp)):
