@@ -102,9 +102,21 @@ def select_validation(CTInfo_path, CTrains_path, CPOD_validated_path, start_date
     CPOD_validated.loc[
         ((CPOD_validated['TrClass'] == "High") | (CPOD_validated['TrClass'] == 'Mod')), 'CTType'] = 'NBHF'
     CPOD_validated['EndTr'] = pd.to_timedelta(CPOD_validated['TrDur_us'], 'us') + CPOD_validated['Time']
+    CPOD_validated['validated'] = 1
     CPOD_ppm = positive_porpoise_minute(CPOD_validated, class_column='CTType', date_column='Time',
                                         end_column='EndTr', hq='NBHF', lq='LQ-NBHF',
                                         start_minute=start_date, end_minute=end_date)
+    if start_date is None:
+        start_date = CPOD_ppm.index.min()
+    if end_date is None:
+        end_date = CPOD_ppm.index.max()
+    CPOD_ppm_validated = positive_porpoise_minute(CPOD_validated[CPOD_validated['SpClass'] != 'NBHFm'],
+                                                  class_column='CTType', date_column='Time',
+                                                  end_column='EndTr', hq='NBHF', lq='LQ-NBHF',
+                                                  start_minute=start_date, end_minute=end_date)
+
+    CPOD_ppm['CPOD_validated'] = 1
+    CPOD_ppm['CPOD_correct'] = (CPOD_ppm['ppm_relaxed'] == CPOD_ppm_validated['ppm_relaxed']).astype(int)
 
     validation_minutes = DPorCCA_ppm.merge(CPOD_ppm, suffixes=['_DPorCCA', '_CPOD'], left_index=True, right_index=True)
 
