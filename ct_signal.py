@@ -8,7 +8,7 @@ import datetime
 import pandas as pd
 
 
-LOW_FREQ = 120000
+LOW_FREQ = 20000
 HIGH_FREQ = 150000
 FILTER_ORDER = 4
 P_REF = 1.0
