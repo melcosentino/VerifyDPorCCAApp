@@ -454,7 +454,7 @@ class Ui_MainWindow(object):
         CTTemp = CP[CP.NewCT == num_ct]
         CTTemp.reset_index(inplace=True)
         self.fs = CTTemp.duration_samples.iloc[0] / (CTTemp.duration_us.iloc[0] / 1e6)
-        CTTemp = self.NewICI(CTTemp)
+        # CTTemp = self.NewICI(CTTemp)
         CTTemp.loc[:, 'SumMs'] = int(0)
         for i in range(1, len(CTTemp)):
             CTTemp.SumMs[i] = int(CTTemp.SumMs[i - 1]) + int(CTTemp.ICI[i])
@@ -521,21 +521,21 @@ class Ui_MainWindow(object):
         self.FreqAxesCT.setYRange(50, 180)
         self.CreateSpectrogram()
 
-    def NewICI(self, myTable):
-        """
-        Calculates inter-click intervals and repetition rates after rows have been removed
-        :param
-        myTable: pandas dataframe
-                Either CP or CTTemp
-        :return:
-        myTable updated
-        """
-        StartSample = myTable["start_sample"]
-        myTable.ICI = StartSample.diff() / (self.fs / 1000)
-        myTable["CPS"] = 1000 / myTable["ICI"]
-        myTable.iloc[0]['CPS'] = 0
-        myTable.iloc[0]['ICI'] = 0
-        return myTable
+    # def NewICI(self, myTable):
+    #     """
+    #     Calculates inter-click intervals and repetition rates after rows have been removed
+    #     :param
+    #     myTable: pandas dataframe
+    #             Either CP or CTTemp
+    #     :return:
+    #     myTable updated
+    #     """
+    #     StartSample = myTable["start_sample"]
+    #     myTable.ICI = StartSample.diff() / (self.fs / 1000)
+    #     myTable["CPS"] = 1000 / myTable["ICI"]
+    #     myTable.iloc[0]['CPS'] = 0
+    #     myTable.iloc[0]['ICI'] = 0
+    #     return myTable
 
     def put_wrong(self):
         """
